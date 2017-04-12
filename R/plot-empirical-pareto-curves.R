@@ -1,0 +1,51 @@
+# ---------------------------------------------------------------------------- #
+# R replication file to plot the generalized Pareto curves for different
+# definitions of income in France and the United States
+# ---------------------------------------------------------------------------- #
+
+d_ply(dina_data, c("year", "income_type"), function(data) {
+    year <- data$year[1]
+    income_type <- data$income_type[1]
+    income_type_short <- data$income_type_short[1]
+
+    # Remove the bottom of the distribution and the very top
+    data <- data[data$p >= 0.3e5 & data$p <= 0.99e5, ]
+
+    # Rescale percentiles within [0, 1]
+    data$p <- data$p/1e5
+
+    if (income_type == "pre-tax capital income") {
+        limits <- c(1.5, 10)
+    } else if (income_type == "pre-tax labor income") {
+        limits <- c(1, 4)
+    } else {
+        limits <- c(1.5, 4.5)
+    }
+
+    cat(paste0("Plotting: empirical Pareto curves - ", income_type, " - ", year, "\n"))
+
+    # Create plot
+    filename <- paste0("output/plots/empirical-pareto-curves/pareto-curves-", income_type_short, "-", year, ".pdf")
+    pdf(filename, family="CM Roman", width=4.5, height=3.5)
+    print(ggplot(data) +
+        geom_line(aes(x=p, y=invpareto, linetype=country), na.rm=TRUE) +
+        scale_x_continuous(limits = c(0.3, 1), breaks=seq(0.3, 1, 0.1)) +
+        scale_linetype_manual(values=c("United States"="solid", "France"="longdash")) +
+        ylim(limits) +
+        xlab(expression(paste("rank ", italic(p)))) +
+        ylab(expression(paste("inverted Pareto coefficient ", italic(b), "(", italic(p), ")"))) +
+        ggtitle(paste("Year", year)) +
+        theme_bw() + theme(
+            legend.justification = c(1, 1),
+            legend.position = c(1, 1),
+            legend.background = element_rect(linetype="solid", color="black", size=0.3),
+            legend.title = element_blank(),
+            legend.box.margin = margin(10, 10, 10, 10),
+            legend.direction = "horizontal",
+            plot.title=element_text(hjust=0.5),
+            plot.subtitle=element_text(hjust=0.5)
+        )
+    )
+    dev.off()
+    embed_fonts(path.expand(filename))
+})

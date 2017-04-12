@@ -31,3 +31,7 @@ vignettes/*.pdf
 # Temporary files created by R markdown
 *.utf8.md
 *.knit.md
+
+# Output of the programs
+output/plots/empirical-pareto-curves/*.pdf
+output/plots/generalized-pareto-distribution/*.pdf
