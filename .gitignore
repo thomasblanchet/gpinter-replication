@@ -35,3 +35,5 @@ vignettes/*.pdf
 # Output of the programs
 output/plots/empirical-pareto-curves/*.pdf
 output/plots/generalized-pareto-distribution/*.pdf
+output/plots/comparison-pareto-curves/*.pdf
+output/plots/comparison-time-series/*.pdf

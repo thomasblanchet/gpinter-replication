@@ -14,11 +14,22 @@ library(gpinter)
 # Other required packages
 library(plyr)
 library(ggplot2)
+library(scales)
+library(reshape2)
+library(gridExtra)
 
 # This is required to get the same font as the rest of the LaTeX document in graphs
 library(fontcm)
 library(extrafont)
 loadfonts()
+
+# Function to extract legends in ggplot
+g_legend <- function(gplot){
+    tmp <- ggplot_gtable(ggplot_build(gplot))
+    leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+    legend <- tmp$grobs[[leg]]
+    return(legend)
+}
 
 # Set the project root directory here
 setwd("~/GitHub/gpinter-replication")

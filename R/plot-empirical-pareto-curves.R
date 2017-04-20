@@ -28,7 +28,8 @@ d_ply(dina_data, c("year", "income_type"), function(data) {
     filename <- paste0("output/plots/empirical-pareto-curves/pareto-curves-", income_type_short, "-", year, ".pdf")
     pdf(filename, family="CM Roman", width=4.5, height=3.5)
     print(ggplot(data) +
-        geom_line(aes(x=p, y=invpareto, linetype=country), na.rm=TRUE) +
+        geom_line(aes(x=p, y=invpareto, linetype=country, color=country), na.rm=TRUE) +
+        scale_color_brewer(type="qual", palette="Set1") +
         scale_x_continuous(limits = c(0.3, 1), breaks=seq(0.3, 1, 0.1)) +
         scale_linetype_manual(values=c("United States"="solid", "France"="longdash")) +
         ylim(limits) +

@@ -6,14 +6,14 @@
 // Equal-split fiscal income
 // -------------------------------------------------------------------------- //
 
-local excel_sheets "TC4" "TC13" "TC23" "TC25"
+local excel_sheets TC4 TC13
 
 tempfile data
 
-forvalues j = 1/4 {
+forvalues j = 1/2 {
 	local sheet_name: word `j' of `excel_sheets'
 	
-	import excel "data-raw/GGP2017DINAAppendixC.xlsx", clear sheet("TC13") cellrange(A14:EF140)
+	import excel "data-raw/GGP2017DINAAppendixC.xlsx", clear sheet("`sheet_name'") cellrange(A14:EF140)
 
 	// Rename columns
 	rename A p
@@ -83,14 +83,6 @@ forvalues j = 1/4 {
 	else if (`j' == 2) {
 		generate income_type = "pre-tax national income"
 		generate income_type_short = "pretax"
-	}
-	else if (`j' == 3) {
-		generate income_type = "pre-tax labor income"
-		generate income_type_short = "labor"
-	}
-	else if (`j' == 4) {
-		generate income_type = "pre-tax capital income"
-		generate income_type_short = "capital"
 	}
 	if (`j' != 1) {
 		append using "`data'"
