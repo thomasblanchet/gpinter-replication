@@ -1,6 +1,8 @@
 # ---------------------------------------------------------------------------- #
-# Code for the replication of the tables comparing the different interpolation
-# methods in Blanchet, Fournier & Piketty (2017).
+# “Generalized Pareto Curves: Theory and Applications”, 2017
+# Thomas Blanchet, Juliette Fournier, Thomas Piketty
+# ---------------------------------------------------------------------------- #
+# Compare the different interpolation methods in tables and graphs.
 # ---------------------------------------------------------------------------- #
 
 # Perform the interpolation with different methods
@@ -8,7 +10,7 @@ comparisons <- ddply(dina_data, c("iso", "country", "year", "income_type", "inco
     average <- data$average[1]
     income_type_short <- data$income_type_short[1]
 
-    if (income_type_short %in% c("capital", "fiscal")) {
+    if (income_type_short == "fiscal") {
         p_in <- c(0, 0.4, 0.7, 0.9, 0.99, 1)
         p_out <- c(0.5, 0.8, 0.95)
     } else {

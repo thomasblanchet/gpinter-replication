@@ -14,7 +14,7 @@ generate long p = round(1000*real(substr(p2, 2, .)))
 replace p = -1 if (p2 == "pall")
 
 // Keep 4 types of income: fiscal, pre-tax total, pre-tax labor and pre-tax capital
-keep iso country year p npopul992j ?fiinc992j ?ptinc992j
+keep iso country year p npopul992j ?fiinc992j ?ptinc992j ?ptlin992j ?ptkin992j
 
 // Reshape to long format (put income type as a variable)
 reshape long n a s t, i(year p) j(income_type) string
@@ -48,10 +48,14 @@ merge n:1 iso year income_type using "`average'", nogenerate assert(match)
 // Put income type in friendlier format
 replace income_type = "fiscal income"           if (income_type == "fiinc992j")
 replace income_type = "pre-tax national income" if (income_type == "ptinc992j")
+replace income_type = "pre-tax capital income"  if (income_type == "ptkin992j")
+replace income_type = "pre-tax labor income"    if (income_type == "ptlin992j")
 
 generate income_type_short = ""
 replace income_type_short = "fiscal"  if (income_type == "fiscal income")
 replace income_type_short = "pretax"  if (income_type == "pre-tax national income")
+replace income_type_short = "capital" if (income_type == "pre-tax capital income")
+replace income_type_short = "labor"   if (income_type == "pre-tax labor income")
 
 generate population_type = "equal-split adults"
 

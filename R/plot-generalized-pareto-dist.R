@@ -1,6 +1,8 @@
 # ---------------------------------------------------------------------------- #
-# R replication file to plot the generalized Pareto curves for a
-# generalized Pareto distribution with different parameters
+# “Generalized Pareto Curves: Theory and Applications”, 2017
+# Thomas Blanchet, Juliette Fournier, Thomas Piketty
+# ---------------------------------------------------------------------------- #
+# Plot Pareto curves of the generalized Pareto distribution.
 # ---------------------------------------------------------------------------- #
 
 p <- seq(0, 1, 0.001)
@@ -54,10 +56,10 @@ print(ggplot(df) +
     scale_color_brewer(type="qual", palette="Set1") +
     ggtitle(expression(paste(mu==1, ", ", sigma==1/2))) + theme_bw() +
     theme(legend.position = "none", plot.title=element_text(hjust=0.5)) +
-    annotate("text", label="xi==0.2", x=0.1, y=1.5, parse=TRUE) +
-    annotate("text", label="xi==0.5", x=0.1, y=1.9, parse=TRUE) +
+    annotate("text", label="xi==0.2", x=0.1, y=1.50, parse=TRUE) +
+    annotate("text", label="xi==0.5", x=0.1, y=1.90, parse=TRUE) +
     annotate("text", label="xi==0.6", x=0.1, y=2.35, parse=TRUE) +
-    annotate("text", label="xi==0.7", x=0.1, y=2.8, parse=TRUE)
+    annotate("text", label="xi==0.7", x=0.1, y=2.80, parse=TRUE)
 )
 dev.off()
 embed_fonts(path.expand(filename))

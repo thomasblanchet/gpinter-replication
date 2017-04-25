@@ -1,9 +1,8 @@
 # ---------------------------------------------------------------------------- #
 # “Generalized Pareto Curves: Theory and Applications”, 2017
-# by Thomas Blanchet, Juliette Fournier, Thomas Piketty
+# Thomas Blanchet, Juliette Fournier, Thomas Piketty
 # ---------------------------------------------------------------------------- #
-# Replication codes for the shape of generalized Pareto curves with different
-# interpolation methods
+# Shape of generalized Pareto curves with different interpolation methods.
 # ---------------------------------------------------------------------------- #
 
 d_ply(dina_data, c("iso", "country", "year", "income_type", "income_type_short"), function(data) {

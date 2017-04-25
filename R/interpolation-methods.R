@@ -1,5 +1,9 @@
 # ---------------------------------------------------------------------------- #
-# Function for other interpolation methods used in the litterature
+# “Generalized Pareto Curves: Theory and Applications”, 2017
+# Thomas Blanchet, Juliette Fournier, Thomas Piketty
+# ---------------------------------------------------------------------------- #
+# Functions for the different interpolation methods that exist in the
+# litterature.
 # ---------------------------------------------------------------------------- #
 
 # ---------------------------------------------------------------------------- #

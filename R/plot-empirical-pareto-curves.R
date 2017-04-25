@@ -1,6 +1,9 @@
 # ---------------------------------------------------------------------------- #
-# R replication file to plot the generalized Pareto curves for different
-# definitions of income in France and the United States
+# “Generalized Pareto Curves: Theory and Applications”, 2017
+# Thomas Blanchet, Juliette Fournier, Thomas Piketty
+# ---------------------------------------------------------------------------- #
+# Plot empirical Pareto curves using DINA data for France and the
+# United States.
 # ---------------------------------------------------------------------------- #
 
 d_ply(dina_data, c("year", "income_type"), function(data) {
@@ -14,13 +17,8 @@ d_ply(dina_data, c("year", "income_type"), function(data) {
     # Rescale percentiles within [0, 1]
     data$p <- data$p/1e5
 
-    if (income_type == "pre-tax capital income") {
-        limits <- c(1.5, 10)
-    } else if (income_type == "pre-tax labor income") {
-        limits <- c(1, 4)
-    } else {
-        limits <- c(1.5, 4.5)
-    }
+    # Range of the y-axis in the graph
+    limits <- c(1.5, 4.5)
 
     cat(paste0("Plotting: empirical Pareto curves - ", income_type, " - ", year, "\n"))
 
