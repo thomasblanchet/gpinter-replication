@@ -64,7 +64,7 @@ df$err_dphi[df$type == "observed"] <- ksmooth(
 
 filename <- "output/plots/compare-misspecification-error/compare-error-phi.pdf"
 pdf(filename, family="CM Roman", width=4.5, height=3.5)
-ggplot(df) +
+print(ggplot(df) +
     geom_line(aes(x=x, y=err_phi, color=type, linetype=type)) +
     geom_vline(xintercept=xk, linetype="longdash") +
     scale_color_brewer("type", type="qual", palette="Set1") +
@@ -83,12 +83,13 @@ ggplot(df) +
         plot.title=element_text(hjust=0.5),
         plot.subtitle=element_text(hjust=0.5)
     )
+)
 dev.off()
 embed_fonts(path.expand(filename))
 
 filename <- "output/plots/compare-misspecification-error/compare-error-deriv-phi.pdf"
 pdf(filename, family="CM Roman", width=4.5, height=3.5)
-ggplot(df) +
+print(ggplot(df) +
     geom_line(aes(x=x, y=err_dphi, color=type, linetype=type)) +
     geom_vline(xintercept=xk, linetype="longdash") +
     scale_color_brewer("type", type="qual", palette="Set1") +
@@ -107,6 +108,7 @@ ggplot(df) +
         plot.title=element_text(hjust=0.5),
         plot.subtitle=element_text(hjust=0.5)
     )
+)
 dev.off()
 embed_fonts(path.expand(filename))
 

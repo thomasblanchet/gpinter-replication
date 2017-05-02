@@ -34,5 +34,6 @@ vignettes/*.pdf
 
 # Output of the programs
 output/plots/*
+output/tables/*
 data-clean/*.dta
 data-clean/*.csv

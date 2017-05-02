@@ -12,7 +12,7 @@ d_ply(dina_data, c("year", "income_type"), function(data) {
     income_type_short <- data$income_type_short[1]
 
     # Remove the bottom of the distribution and the very top
-    data <- data[data$p >= 0.3e5 & data$p <= 0.99e5, ]
+    data <- data[data$p >= 0.3e5 & data$p <= 0.999e5, ]
 
     # Rescale percentiles within [0, 1]
     data$p <- data$p/1e5
@@ -24,7 +24,7 @@ d_ply(dina_data, c("year", "income_type"), function(data) {
 
     # Create plot
     filename <- paste0("output/plots/empirical-pareto-curves/pareto-curves-", income_type_short, "-", year, ".pdf")
-    pdf(filename, family="CM Roman", width=4.5, height=3.5)
+    pdf(filename, family=plot_font, width=4.5, height=3.5)
     print(ggplot(data) +
         geom_line(aes(x=p, y=invpareto, linetype=country, color=country), na.rm=TRUE) +
         scale_color_brewer(type="qual", palette="Set1") +
@@ -37,12 +37,21 @@ d_ply(dina_data, c("year", "income_type"), function(data) {
         theme_bw() + theme(
             legend.justification = c(1, 1),
             legend.position = c(1, 1),
-            legend.background = element_rect(linetype="solid", color="black", size=0.3),
+            legend.background = element_rect(
+                linetype = "solid",
+                color    = plot_text_color,
+                size     = 0.3,
+                fill     = plot_bg
+            ),
             legend.title = element_blank(),
             legend.box.margin = margin(10, 10, 10, 10),
             legend.direction = "horizontal",
             plot.title=element_text(hjust=0.5),
-            plot.subtitle=element_text(hjust=0.5)
+            plot.subtitle=element_text(hjust=0.5),
+            plot.background = element_rect(fill=plot_bg, color=plot_bg),
+            panel.background = element_rect(fill=plot_bg),
+            legend.key = element_rect(fill=plot_bg),
+            text = element_text(color=plot_text_color)
         )
     )
     dev.off()

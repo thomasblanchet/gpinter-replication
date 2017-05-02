@@ -5,24 +5,6 @@
 # Estimate and plot phi''' in France and the United States.
 # ---------------------------------------------------------------------------- #
 
-# Local polynomial fitting on a function and its derivative
-lpoly <- function(x0, x, y, dydx, alpha) {
-    n <- length(x)
-    t <- x - x0
-    h <- sort(abs(t))[floor(alpha*n)]
-    w <- dnorm(t, sd=h)/h
-
-    Y <- c(y, dydx)
-
-    X0 <- c(rep(1, n), rep(0, n))
-    X1 <- c(t, rep(1, n))
-    X2 <- c(t^2/2, t)
-    X3 <- c(t^3/6, t^2/2)
-
-    fit <- lm(Y ~ 0 + X0 + X1 + X2 + X3, weights=c(w, w))
-    return(coef(fit)["X3"])
-}
-
 # Estimate phi'''
 phi_d3_estim <- ddply(dina_data, c("iso", "country", "year", "income_type", "income_type_short"), function(data) {
     data <- data[data$p >= 10000 & data$p <= 99000, ]
@@ -57,7 +39,7 @@ d_ply(phi_d3_summ, c("country", "income_type"), function(data) {
     income_type_short <- data$income_type_short[1]
 
     filename <- paste0("output/plots/estim-deriv3-phi/estim-phi-d3-", iso, "-", income_type_short, ".pdf")
-    pdf(filename, family="CM Roman", width=4.5, height=3.5)
+    pdf(filename, family=plot_font, width=4.5, height=3.5)
     print(ggplot(data) +
         geom_line(aes(x=x, y=p1), color="grey", na.rm=TRUE) +
         geom_line(aes(x=x, y=p9), color="grey", na.rm=TRUE) +
@@ -70,7 +52,13 @@ d_ply(phi_d3_summ, c("country", "income_type"), function(data) {
         xlab(expression(paste(italic(x) == -log, "(", 1 - italic(p), ")"))) +
         ylab(expression(paste(phi1, "'''", "(", italic(x), ")"))) +
         ylim(c(-6, 0.5)) + theme_bw() +
-        theme(plot.title = element_text(hjust = 0.5)))
+        theme(
+            plot.title = element_text(hjust = 0.5)),
+            plot.background = element_rect(fill=plot_bg, color=plot_bg),
+            panel.background = element_rect(fill=plot_bg),
+            legend.key = element_rect(fill=plot_bg),
+            text = element_text(color=plot_text_color)
+        )
     dev.off()
     embed_fonts(path.expand(filename))
 })

@@ -26,6 +26,17 @@ library(fontcm)
 library(extrafont)
 loadfonts()
 
+# Graphical parameters for the graphs
+# For the article
+plot_font       <- "CM Roman"
+plot_bg         <- "#FFFFFF"
+plot_text_color <- "#000000"
+
+# For the presentation
+#plot_font       <- "CM Sans"
+#plot_bg         <- "#FBFBFB"
+#plot_text_color <- "#23373B"
+
 # Function to extract legends in ggplot
 g_legend <- function(gplot) {
     tmp <- ggplot_gtable(ggplot_build(gplot))
@@ -70,6 +81,10 @@ source("R/plot-generalized-pareto-dist.R")
 # Compare different interpolation methods
 # ---------------------------------------------------------------------------- #
 
+# For testing the interpolation method, we only keep data after 1993 in France
+# (data before was calculated with much smaller sample sizes, or tabulations)
+dina_data <- subset(dina_data, iso != "FR" | (year > 1993 & year <= 2012))
+
 # Functions for different interpolation methods
 source("R/interpolation-methods.R")
 
@@ -89,6 +104,9 @@ source("R/compare-pareto-curves.R")
 # Plot the error bounds as a multiple of phi'''
 source("R/plot-error-bound.R")
 
+# Function for local polynomial fitting on a function and its derivative
+source("R/local-polynomial-fitting.R")
+
 # Calculate and plot the estimates of phi'''
 source("R/plot-deriv3-phi.R")
 
@@ -101,6 +119,9 @@ source("R/out-of-sample-error-bounds.R")
 
 # Estimate optimal position of brackets
 source("R/optimal-position-brackets.R")
+
+# Compare precision with (simulated) survey data
+source("R/compare-survey.R")
 
 # ---------------------------------------------------------------------------- #
 # Sampling error

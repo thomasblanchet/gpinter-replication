@@ -66,22 +66,22 @@ stationary_invpareto <- function(theta, x_out) {
 # Pareto curve
 # ---------------------------------------------------------------------------- #
 
-data_target <- subset(dina_data_us, year == 2010 & income_type_short == "labor")
+data_target <- subset(dina_data_us, year == 2014 & income_type_short == "labor")
 data_target <- subset(data_target, p >= 10000 & p <= 99900)
 
 theta_init <- c(
-    166.081088543638,
-    -1120.38893898389,
-    24697.9506624624,
-    40.5911166026348,
-    682.342092050791,
-    536.090964922847
+    191.239293061311,
+    -941.879895132741,
+    27798.5469931347,
+    51.4653781154658,
+    768.100007149152,
+    457.513214071661
 )
 p_target <- c(seq(0.1, 0.9, 0.1), seq(0.91, 0.99, 0.01))
-q_target <- sapply(p_tabulation, function(p) {
+q_target <- sapply(p_target, function(p) {
     data_target$threshold[round(1e5*p) == data_target$p]
 })
-b_target <- sapply(p_tabulation, function(p) {
+b_target <- sapply(p_target, function(p) {
     data_target$invpareto[round(1e5*p) == data_target$p]
 })
 q_target <- q_target/q_target[1]
@@ -112,13 +112,20 @@ df <- data.frame(
 )
 
 filename <- "output/plots/pareto-curve-dynamic-model/volatility.pdf"
-pdf(filename, family="CM Roman", width=4.5, height=3.5)
+pdf(filename, family=plot_font, width=4.5, height=3.5)
 print(ggplot(df) + geom_line(aes(x=x, y=sigma)) +
     scale_x_log10(breaks=c(1, 2, 5, 10, 20, 50, 100, 200, 500, 1000)) +
     xlab("normalized earnings") + ylab("standard deviation") +
     ggtitle("Volatility of earnings growth",
-        subtitle = "calibrated to match the distribution \nof the top 90% of US labor income in 2010") +
-    theme_bw() + theme(plot.title=element_text(hjust=0.5), plot.subtitle=element_text(hjust=0.5)))
+        subtitle = "calibrated to match the distribution \nof the top 90% of US labor income in 2014") +
+    theme_bw() + theme(
+        plot.title = element_text(hjust=0.5),
+        plot.subtitle = element_text(hjust=0.5)),
+        plot.background = element_rect(fill=plot_bg, color=plot_bg),
+        panel.background = element_rect(fill=plot_bg),
+        legend.key = element_rect(fill=plot_bg),
+        text = element_text(color=plot_text_color)
+    )
 dev.off()
 embed_fonts(path.expand(filename))
 
@@ -142,17 +149,25 @@ df <- rbind(
 )
 
 filename <- "output/plots/pareto-curve-dynamic-model/stationary-dist.pdf"
-pdf(filename, family="CM Roman", width=4.5, height=3.5)
-ggplot(df) + geom_line(aes(x=p, y=b, linetype=source, color=source), na.rm=TRUE) + theme_bw() +
-    ggtitle("Generalized Pareto curve", subtitle="top 90% of US labor income in 2010") +
+pdf(filename, family=plot_font, width=4.5, height=3.5)
+print(ggplot(df) + geom_line(aes(x=p, y=b, linetype=source, color=source), na.rm=TRUE) + theme_bw() +
+    ggtitle("Generalized Pareto curve", subtitle="top 90% of US labor income in 2014") +
     ylab("inverted Pareto coefficient") + xlab("fractile") +
     theme(legend.justification = c(1, 1), legend.position = c(1, 1), legend.title = element_blank(),
         legend.background = element_rect(linetype="solid", color="black", size=0.25),
-        legend.box.margin = margin(10, 10, 10, 10), legend.direction = "horizontal",
-        plot.title=element_text(hjust=0.5), plot.subtitle=element_text(hjust=0.5)) +
+        legend.box.margin = margin(10, 10, 10, 10),
+        legend.direction = "horizontal",
+        plot.title=element_text(hjust=0.5),
+        plot.subtitle=element_text(hjust=0.5),
+        plot.background = element_rect(fill=plot_bg, color=plot_bg),
+        panel.background = element_rect(fill=plot_bg),
+        legend.key = element_rect(fill=plot_bg),
+        text = element_text(color=plot_text_color)
+    ) +
     scale_x_continuous(limits = c(0.1, 1), breaks=seq(0.1, 1, 0.1)) +
     scale_color_brewer("source", type="qual", palette="Set1") +
     scale_linetype_manual("source", values=c("model"="solid", "data"="longdash"))
+)
 dev.off()
 embed_fonts(path.expand(filename))
 

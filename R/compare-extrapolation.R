@@ -13,11 +13,11 @@ comparisons <- ddply(dina_data, c("iso", "country", "year", "income_type", "inco
     country           <- data$country[1]
     iso               <- data$iso[1]
 
-    # Select the desired test tabulation here
-    p_in <- c(0, 0.5, 0.90, 0.99, 1)
-    p_out <- 0.999
-    #p_in <- c(0, 0.5, 0.8, 0.9, 1)
-    #p_out <- 0.99
+    # Test tabulation here
+    p_in <- c(0, 0.5, 0.9, 0.95, 1)
+    p_out <- 0.99
+    #p_in <- c(0, 0.5, 0.9, 0.99, 1)
+    #p_out <- 0.995
 
     # Create the short tabulation (to be used in interpolation)
     data$bracket <- cut(data$p,
@@ -58,10 +58,9 @@ comparisons <- ddply(dina_data, c("iso", "country", "year", "income_type", "inco
     df_line[df_line$p <= p_in[length(p_in) - 1], "type"] <- "interpolation"
     df_line[df_line$p > p_in[length(p_in) - 1], "type"] <- "extrapolation"
 
-
     cat(paste0("Plotting: Pareto curves (extrapolation) - ", country, " - ", income_type_short, " - ", year, "\n"))
     filename <- paste0("output/plots/pareto-curves-extrapolation/pareto-curve-", iso, "-", income_type_short, "-", year, ".pdf")
-    pdf(filename, family="CM Roman", width=4.5, height=3.5)
+    pdf(filename, family=plot_font, width=4.5, height=3.5)
     print(ggplot() +
         geom_line(data=df_line, aes(x=p, y=b, linetype=type)) +
         geom_point(data=df_points, aes(x=p, y=b, shape=type)) +
@@ -75,8 +74,14 @@ comparisons <- ddply(dina_data, c("iso", "country", "year", "income_type", "inco
         theme_bw() + theme(legend.justification = c(0, 1), legend.position = c(0, 1),
             legend.background = element_rect(linetype="solid", color="black", size=0.25),
             legend.box.margin = margin(10, 10, 10, 10),
-            legend.direction = "horizontal", plot.title=element_text(hjust=0.5),
-            plot.subtitle=element_text(hjust=0.5)) + ggtitle(paste0(country, ", ", year))
+            legend.direction = "horizontal",
+            plot.title = element_text(hjust=0.5),
+            plot.subtitle = element_text(hjust=0.5),
+            plot.background = element_rect(fill=plot_bg, color=plot_bg),
+            panel.background = element_rect(fill=plot_bg),
+            legend.key = element_rect(fill=plot_bg),
+            text = element_text(color=plot_text_color)
+        ) + ggtitle(paste0(country, ", ", year))
     )
     dev.off()
     embed_fonts(path.expand(filename))
@@ -100,10 +105,12 @@ comparisons <- ddply(dina_data, c("iso", "country", "year", "income_type", "inco
 relerr <- function(a, b) abs(100*(b - a)/a)
 
 extrapolation_re <- data.frame(
-    country     = comparisons$country,
-    year        = comparisons$year,
-    income_type = comparisons$income_type,
-    p           = comparisons$p,
+    country           = comparisons$country,
+    iso               = comparisons$iso,
+    year              = comparisons$year,
+    income_type       = comparisons$income_type,
+    income_type_short = comparisons$income_type_short,
+    p                 = comparisons$p,
 
     threshold_m0 = relerr(comparisons$threshold_actual, comparisons$threshold_m0),
     threshold_m1 = relerr(comparisons$threshold_actual, comparisons$threshold_m1),
@@ -115,7 +122,7 @@ extrapolation_re <- data.frame(
 )
 
 # Calculate the mean of the error
-extrapolation_mre <- ddply(extrapolation_re, c("country", "income_type", "p"), function(data) {
+extrapolation_mre <- ddply(extrapolation_re, c("iso", "country", "income_type", "income_type_short", "p"), function(data) {
     return(data.frame(
         threshold_m0 = mean(data$threshold_m0),
         threshold_m1 = mean(data$threshold_m1),
@@ -125,6 +132,81 @@ extrapolation_mre <- ddply(extrapolation_re, c("country", "income_type", "p"), f
         topshare_m1 = mean(data$topshare_m1),
         topshare_m2 = mean(data$topshare_m2)
     ))
+})
+
+# Generate LaTeX tables comparing the results
+d_ply(extrapolation_mre, "income_type", function(data) {
+    filename <- paste0("output/tables/compare-extrapolation/compare-", data$income_type_short[1], ".tex")
+
+    # Number of methods to compare
+    n <- 3
+    # Column for thresholds
+    threshold_cols <- paste0("threshold_m", 0:(n - 1))
+    topshare_cols <- paste0("topshare_m", 0:(n - 1))
+
+    sink(filename)
+
+    cat(paste0(c("\\begin{tabular}{cc", rep("P@{}", n), "} \\toprule\n"), collapse=""))
+    cat(paste0("& & \\multicolumn{", n, "}{>{\\centering\\arraybackslash}p{", 2*n, "cm}}"))
+    cat("{mean percentage gap between estimated and observed values}")
+    cat(paste0("\\\\ \\cmidrule(l){3-", 3 + n - 1, "}\n"))
+    cat("& & ")
+    cat(paste0(paste0("M", 0:(n - 1), collapse=" & "), " \\\\ \\midrule\n"))
+
+    # United States
+    data_us <- subset(data, iso == "US")
+    cat("\\multirow{4}{3cm}{\\centering United States \\\\ (1962--2014)} & ")
+    cat(paste0("\\multirow{2}{*}{Top ", 100*(1 - data_us$p), "\\% share} & "))
+    cat(paste0(format(data_us[1, topshare_cols], digits=2, scientific=FALSE), collapse="\\% & "))
+    cat("\\% \\\\ \n")
+    cat("& & (ref.)")
+    for (j in 1:(n - 1)) {
+        cat(" & ($\\times ")
+        cat(format(data_us[1, paste0("topshare_m", j)]/data_us[1, "topshare_m0"], digits=2, scientific=FALSE))
+        cat("$)")
+    }
+    cat(paste0("\\\\ \\cmidrule(l){2-", 2 + n, "}\n"))
+
+    cat("& ")
+    cat(paste0("\\multirow{2}{*}{P", 100*data_us$p,"/average} & "))
+    cat(paste0(format(data_us[1, threshold_cols], digits=2, scientific=FALSE), collapse="\\% & "))
+    cat("\\% \\\\ \n")
+    cat("& & (ref.)")
+    for (j in 1:(n - 1)) {
+        cat(" & ($\\times ")
+        cat(format(data_us[1, paste0("threshold_m", j)]/data_us[1, "threshold_m0"], digits=2, scientific=FALSE))
+        cat("$)")
+    }
+    cat(paste0("\\\\ \\midrule\n"))
+
+    # France
+    data_fr <- subset(data, iso == "FR")
+    cat("\\multirow{4}{3cm}{\\centering France \\\\ (1994--2012)} & ")
+    cat(paste0("\\multirow{2}{*}{Top ", 100*(1 - data_fr$p), "\\% share} & "))
+    cat(paste0(format(data_fr[1, topshare_cols], digits=2, scientific=FALSE), collapse="\\% & "))
+    cat("\\% \\\\ \n")
+    cat("& & (ref.)")
+    for (j in 1:(n - 1)) {
+        cat(" & ($\\times ")
+        cat(format(data_fr[1, paste0("topshare_m", j)]/data_fr[1, "topshare_m0"], digits=2, scientific=FALSE))
+        cat("$)")
+    }
+    cat(paste0("\\\\ \\cmidrule(l){2-", 2 + n, "}\n"))
+
+    cat("& ")
+    cat(paste0("\\multirow{2}{*}{P", 100*data_fr$p,"/average} & "))
+    cat(paste0(format(data_fr[1, threshold_cols], digits=2, scientific=FALSE), collapse="\\% & "))
+    cat("\\% \\\\ \n")
+    cat("& & (ref.)")
+    for (j in 1:(n - 1)) {
+        cat(" & ($\\times ")
+        cat(format(data_fr[1, paste0("threshold_m", j)]/data_fr[1, "threshold_m0"], digits=2, scientific=FALSE))
+        cat("$)")
+    }
+    cat(paste0("\\\\ \\bottomrule\n"))
+    cat("\\end{tabular}\n")
+
+    sink()
 })
 
 

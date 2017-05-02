@@ -58,9 +58,6 @@ forvalues j = 1/2 {
 	// Add the above information on averages to the data
 	merge n:1 year using "`average'", nogenerate assert(match)
 
-	// Only keep years with microdata
-	keep if inlist(year, 1970, 1975, 1979, 1984, 1988) | inrange(year, 1990, 2012)
-
 	// Get top share
 	rename a topaverage
 	rename t threshold

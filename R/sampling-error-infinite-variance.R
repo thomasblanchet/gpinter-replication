@@ -236,7 +236,7 @@ sampling_error <- data.frame(
 
 # Plot
 filename <- "output/plots/sampling-error/error-phi-infinite-variance.pdf"
-pdf(filename, family="CM Roman", width=4.5, height=3.5)
+pdf(filename, family=plot_font, width=4.5, height=3.5)
 print(ggplot(data=sampling_error) + geom_line(aes(x=x, y=phi), na.rm=TRUE) +
     geom_vline(xintercept=xk, linetype="dashed") +
     annotate("text", label="paste(italic(p) == 10, '%')", x=xk[1] + 0.16, y=1.8e-5, angle=90, parse=TRUE) +
@@ -247,12 +247,19 @@ print(ggplot(data=sampling_error) + geom_line(aes(x=x, y=phi), na.rm=TRUE) +
     scale_y_continuous(name="mean absolute error", labels=fancy_scientific) +
     ggtitle(expression(paste(phi1, '(', italic(x), ") for US labor income (1962)")),
         subtitle=expression("for a tabulation with"~italic(p)~"= 10%, 50%, 90% and 99%")) +
-    theme_bw() + theme(plot.title=element_text(hjust=0.5), plot.subtitle=element_text(hjust=0.5)))
+    theme_bw() + theme(
+        plot.title = element_text(hjust=0.5),
+        plot.subtitle = element_text(hjust=0.5)),
+        plot.background = element_rect(fill=plot_bg, color=plot_bg),
+        panel.background = element_rect(fill=plot_bg),
+        legend.key = element_rect(fill=plot_bg),
+        text = element_text(color=plot_text_color)
+    )
 dev.off()
 embed_fonts(path.expand(filename))
 
 filename <- "output/plots/sampling-error/error-deriv-phi-infinite-variance.pdf"
-pdf(filename, family="CM Roman", width=4.5, height=3.5)
+pdf(filename, family=plot_font, width=4.5, height=3.5)
 print(ggplot(data=sampling_error) + geom_line(aes(x=x, y=dphi), na.rm=TRUE) +
     geom_vline(xintercept=xk, linetype="dashed") +
     annotate("text", label="paste(italic(p) == 10, '%')", x=xk[1] + 0.16, y=4.5e-5, angle=90, parse=TRUE) +
@@ -263,7 +270,14 @@ print(ggplot(data=sampling_error) + geom_line(aes(x=x, y=dphi), na.rm=TRUE) +
     scale_y_continuous(name="mean absolute error", labels=fancy_scientific, limits=c(0, 5e-5)) +
     ggtitle(expression(paste(phi1, "'(", italic(x), ") for US labor income (1962)")),
         subtitle=expression("for a tabulation with"~italic(p)~"= 10%, 50%, 90% and 99%")) +
-    theme_bw() + theme(plot.title=element_text(hjust=0.5), plot.subtitle=element_text(hjust=0.5)))
+    theme_bw() + theme(
+        plot.title = element_text(hjust=0.5),
+        plot.subtitle = element_text(hjust=0.5)),
+        plot.background = element_rect(fill=plot_bg, color=plot_bg),
+        panel.background = element_rect(fill=plot_bg),
+        legend.key = element_rect(fill=plot_bg),
+        text = element_text(color=plot_text_color)
+    )
 dev.off()
 embed_fonts(path.expand(filename))
 

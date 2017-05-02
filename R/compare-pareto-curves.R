@@ -79,7 +79,7 @@ d_ply(dina_data, c("iso", "country", "year", "income_type", "income_type_short")
     cat(paste0("Plotting: comparison Pareto curves - ", country, " - ", income_type_short, " - ", year, "\n"))
 
     filename <- paste0("output/plots/comparison-pareto-curves/pareto-curve-", iso, "-", income_type_short, "-", year, ".pdf")
-    pdf(filename, family="CM Roman", width=6, height=3.5)
+    pdf(filename, family=plot_font, width=6, height=3.5)
     print(ggplot(df) +
         geom_line(aes(x=p, y=value, linetype="estimated", color="estimated"), na.rm=TRUE) +
         geom_line(data=actual, aes(x=p, y=b, linetype="data", color="data")) +
@@ -89,7 +89,14 @@ d_ply(dina_data, c("iso", "country", "year", "income_type", "income_type_short")
         scale_linetype_manual(name="source", values=c("data"="dashed", "estimated"="solid")) +
         xlab(expression(paste("rank ", italic(p)))) +
         ylab(expression(paste("inverted Pareto coefficient ", italic(b), "(", italic(p), ")"))) +
-        theme_bw() + theme(legend.position="right", legend.title=element_blank())
+        theme_bw() + theme(
+            legend.position = "right",
+            legend.title = element_blank(),
+            plot.background = element_rect(fill=plot_bg, color=plot_bg),
+            panel.background = element_rect(fill=plot_bg),
+            legend.key = element_rect(fill=plot_bg),
+            text = element_text(color=plot_text_color)
+        )
     )
     dev.off()
     embed_fonts(path.expand(filename))
