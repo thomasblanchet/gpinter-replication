@@ -245,7 +245,7 @@ print(ggplot(data=sampling_error) + geom_line(aes(x=x, y=phi), na.rm=TRUE) +
     annotate("text", label="paste(italic(p) == 99, '%')", x=xk[4] - 0.16, y=1.8e-5, angle=90, parse=TRUE) +
     xlab(expression(paste(italic(x) == -log, "(", 1 - italic(p), ")"))) +
     scale_y_continuous(name="mean absolute error", labels=fancy_scientific) +
-    ggtitle(expression(paste(phi1, '(', italic(x), ") for US labor income (1962)")),
+    ggtitle(expression(paste(phi1, '(', italic(x), ") for US capital income (1962)")),
         subtitle=expression("for a tabulation with"~italic(p)~"= 10%, 50%, 90% and 99%")) +
     theme_bw() + theme(
         plot.title = element_text(hjust=0.5),
@@ -268,7 +268,7 @@ print(ggplot(data=sampling_error) + geom_line(aes(x=x, y=dphi), na.rm=TRUE) +
     annotate("text", label="paste(italic(p) == 99, '%')", x=xk[4] - 0.16, y=4.5e-5, angle=90, parse=TRUE) +
     xlab(expression(paste(italic(x) == -log, "(", 1 - italic(p), ")"))) +
     scale_y_continuous(name="mean absolute error", labels=fancy_scientific, limits=c(0, 5e-5)) +
-    ggtitle(expression(paste(phi1, "'(", italic(x), ") for US labor income (1962)")),
+    ggtitle(expression(paste(phi1, "'(", italic(x), ") for US capital income (1962)")),
         subtitle=expression("for a tabulation with"~italic(p)~"= 10%, 50%, 90% and 99%")) +
     theme_bw() + theme(
         plot.title = element_text(hjust=0.5),

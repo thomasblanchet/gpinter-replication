@@ -37,3 +37,6 @@ output/plots/*
 output/tables/*
 data-clean/*.dta
 data-clean/*.csv
+data-temp/*.dta
+
+data-wid/world-wealth-and-income-database.csv

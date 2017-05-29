@@ -14,10 +14,10 @@ comparisons <- ddply(dina_data, c("iso", "country", "year", "income_type", "inco
     iso               <- data$iso[1]
 
     # Test tabulation here
-    p_in <- c(0, 0.5, 0.9, 0.95, 1)
-    p_out <- 0.99
-    #p_in <- c(0, 0.5, 0.9, 0.99, 1)
-    #p_out <- 0.995
+    #p_in <- c(0, 0.5, 0.9, 0.95, 1)
+    #p_out <- 0.99
+    p_in <- c(0, 0.5, 0.9, 0.99, 1)
+    p_out <- 0.999
 
     # Create the short tabulation (to be used in interpolation)
     data$bracket <- cut(data$p,
@@ -58,33 +58,33 @@ comparisons <- ddply(dina_data, c("iso", "country", "year", "income_type", "inco
     df_line[df_line$p <= p_in[length(p_in) - 1], "type"] <- "interpolation"
     df_line[df_line$p > p_in[length(p_in) - 1], "type"] <- "extrapolation"
 
-    cat(paste0("Plotting: Pareto curves (extrapolation) - ", country, " - ", income_type_short, " - ", year, "\n"))
-    filename <- paste0("output/plots/pareto-curves-extrapolation/pareto-curve-", iso, "-", income_type_short, "-", year, ".pdf")
-    pdf(filename, family=plot_font, width=4.5, height=3.5)
-    print(ggplot() +
-        geom_line(data=df_line, aes(x=p, y=b, linetype=type)) +
-        geom_point(data=df_points, aes(x=p, y=b, shape=type)) +
-        scale_linetype_manual("estimation", values=c("interpolation"="solid", "extrapolation"="dashed")) +
-        scale_shape_manual("data", values=c("included"=19, "excluded"=1)) +
-        xlab(expression(paste("rank ", italic(p)))) +
-        ylab(expression(paste("inverted Pareto coefficient ", italic(b), "(", italic(p), ")"))) +
-        scale_x_continuous(breaks=seq(0.9, 1, 0.02)) +
-        guides(linetype = guide_legend(title.position = "top", order=1),
-            shape = guide_legend(title.position = "top", order=2)) +
-        theme_bw() + theme(legend.justification = c(0, 1), legend.position = c(0, 1),
-            legend.background = element_rect(linetype="solid", color="black", size=0.25),
-            legend.box.margin = margin(10, 10, 10, 10),
-            legend.direction = "horizontal",
-            plot.title = element_text(hjust=0.5),
-            plot.subtitle = element_text(hjust=0.5),
-            plot.background = element_rect(fill=plot_bg, color=plot_bg),
-            panel.background = element_rect(fill=plot_bg),
-            legend.key = element_rect(fill=plot_bg),
-            text = element_text(color=plot_text_color)
-        ) + ggtitle(paste0(country, ", ", year))
-    )
-    dev.off()
-    embed_fonts(path.expand(filename))
+    # cat(paste0("Plotting: Pareto curves (extrapolation) - ", country, " - ", income_type_short, " - ", year, "\n"))
+    # filename <- paste0("output/plots/pareto-curves-extrapolation/pareto-curve-", iso, "-", income_type_short, "-", year, ".pdf")
+    # pdf(filename, family=plot_font, width=4.5, height=3.5)
+    # print(ggplot() +
+    #     geom_line(data=df_line, aes(x=p, y=b, linetype=type)) +
+    #     geom_point(data=df_points, aes(x=p, y=b, shape=type)) +
+    #     scale_linetype_manual("estimation", values=c("interpolation"="solid", "extrapolation"="dashed")) +
+    #     scale_shape_manual("data", values=c("included"=19, "excluded"=1)) +
+    #     xlab(expression(paste("rank ", italic(p)))) +
+    #     ylab(expression(paste("inverted Pareto coefficient ", italic(b), "(", italic(p), ")"))) +
+    #     scale_x_continuous(breaks=seq(0.9, 1, 0.02)) +
+    #     guides(linetype = guide_legend(title.position = "top", order=1),
+    #         shape = guide_legend(title.position = "top", order=2)) +
+    #     theme_bw() + theme(legend.justification = c(0, 1), legend.position = c(0, 1),
+    #         legend.background = element_rect(linetype="solid", color="black", size=0.25),
+    #         legend.box.margin = margin(10, 10, 10, 10),
+    #         legend.direction = "horizontal",
+    #         plot.title = element_text(hjust=0.5),
+    #         plot.subtitle = element_text(hjust=0.5),
+    #         plot.background = element_rect(fill=plot_bg, color=plot_bg),
+    #         panel.background = element_rect(fill=plot_bg),
+    #         legend.key = element_rect(fill=plot_bg),
+    #         text = element_text(color=plot_text_color)
+    #     ) + ggtitle(paste0(country, ", ", year))
+    # )
+    # dev.off()
+    # embed_fonts(path.expand(filename))
 
     return(data.frame(
         p = p_out,
@@ -99,6 +99,78 @@ comparisons <- ddply(dina_data, c("iso", "country", "year", "income_type", "inco
         topshare_m1 = m1$topshare,
         topshare_m2 = m2$topshare
     ))
+})
+
+# Plot the time series
+d_ply(comparisons, c("iso", "country", "income_type", "income_type_short", "p"), function(data) {
+    country           <- data$country[1]
+    iso               <- data$iso[1]
+    income_type_short <- data$income_type_short[1]
+    p                 <- data$p[1]
+
+    data <- melt(data, id.vars=c("iso", "country", "year", "income_type", "income_type_short"))
+
+    cat(paste0("Plotting: comparison time series - ", country, " - ", income_type_short, " - ", 100*p, "\n"))
+
+    # Create plot for thresholds
+    data_thresholds <- data[grepl("threshold", data$variable), ]
+    data_thresholds$method[data_thresholds$variable == "threshold_actual"] <- "data"
+    data_thresholds$method[data_thresholds$variable == "threshold_m0"] <- "M0"
+    data_thresholds$method[data_thresholds$variable == "threshold_m1"] <- "M1"
+    data_thresholds$method[data_thresholds$variable == "threshold_m2"] <- "M2"
+
+    p1 <- ggplot(data_thresholds) +
+        geom_line(aes(x=year, y=value, color=method), na.rm=TRUE) +
+        geom_point(aes(x=year, y=value, color=method, shape=method), na.rm=TRUE) +
+        ylab(paste0("P", 100*p, "/average")) +
+        scale_color_brewer(type="qual", palette="Set1") +
+        scale_shape_manual(values=c(19, 0, 2, 4)) +
+        theme_bw() + theme(
+            legend.title = element_blank(),
+            legend.position = "bottom",
+            plot.background = element_rect(fill=plot_bg, color=plot_bg),
+            panel.background = element_rect(fill=plot_bg),
+            legend.key = element_rect(fill=plot_bg),
+            text = element_text(color=plot_text_color)
+        )
+
+    # Create plot for top shares
+    data_topshare <- data[grepl("topshare", data$variable), ]
+    data_topshare$method[data_topshare$variable == "topshare_actual"] <- "data"
+    data_topshare$method[data_topshare$variable == "topshare_m0"] <- "M0"
+    data_topshare$method[data_topshare$variable == "topshare_m1"] <- "M1"
+    data_topshare$method[data_topshare$variable == "topshare_m2"] <- "M2"
+
+    p2 <- ggplot(data_topshare) +
+        geom_line(aes(x=year, y=value, color=method), na.rm=TRUE) +
+        geom_point(aes(x=year, y=value, color=method, shape=method), na.rm=TRUE) +
+        ylab(paste0("top ", 100*(1 - p), "% share")) +
+        scale_y_continuous(labels=percent) +
+        scale_color_brewer(type="qual", palette="Set1") +
+        scale_shape_manual(values=c(19, 0, 2, 4)) +
+        theme_bw() + theme(
+            legend.position = "none",
+            plot.background = element_rect(fill=plot_bg, color=plot_bg),
+            panel.background = element_rect(fill=plot_bg),
+            legend.key = element_rect(fill=plot_bg),
+            text = element_text(color=plot_text_color)
+        )
+
+    # Extract the legend
+    legend <- g_legend(p1)
+
+    filename <- paste0("output/plots/comparison-time-series/time-series-", iso, "-", income_type_short, "-", 100*p, ".pdf")
+    pdf(filename, family=plot_font, width=9, height=4)
+    grid.arrange(
+        arrangeGrob(
+            p1 + theme(legend.position="none"),
+            p2 + theme(legend.position="none"),
+            nrow = 1
+        ),
+        legend, nrow=2, heights=c(10, 1)
+    )
+    dev.off()
+    embed_fonts(path.expand(filename))
 })
 
 # Calculate relative error
@@ -159,9 +231,9 @@ d_ply(extrapolation_mre, "income_type", function(data) {
     cat(paste0("\\multirow{2}{*}{Top ", 100*(1 - data_us$p), "\\% share} & "))
     cat(paste0(format(data_us[1, topshare_cols], digits=2, scientific=FALSE), collapse="\\% & "))
     cat("\\% \\\\ \n")
-    cat("& & (ref.)")
+    cat("& & \\footnotesize (ref.)")
     for (j in 1:(n - 1)) {
-        cat(" & ($\\times ")
+        cat(" & \\footnotesize ($\\times ")
         cat(format(data_us[1, paste0("topshare_m", j)]/data_us[1, "topshare_m0"], digits=2, scientific=FALSE))
         cat("$)")
     }
@@ -171,9 +243,9 @@ d_ply(extrapolation_mre, "income_type", function(data) {
     cat(paste0("\\multirow{2}{*}{P", 100*data_us$p,"/average} & "))
     cat(paste0(format(data_us[1, threshold_cols], digits=2, scientific=FALSE), collapse="\\% & "))
     cat("\\% \\\\ \n")
-    cat("& & (ref.)")
+    cat("& & \\footnotesize (ref.)")
     for (j in 1:(n - 1)) {
-        cat(" & ($\\times ")
+        cat(" & \\footnotesize ($\\times ")
         cat(format(data_us[1, paste0("threshold_m", j)]/data_us[1, "threshold_m0"], digits=2, scientific=FALSE))
         cat("$)")
     }
@@ -185,9 +257,9 @@ d_ply(extrapolation_mre, "income_type", function(data) {
     cat(paste0("\\multirow{2}{*}{Top ", 100*(1 - data_fr$p), "\\% share} & "))
     cat(paste0(format(data_fr[1, topshare_cols], digits=2, scientific=FALSE), collapse="\\% & "))
     cat("\\% \\\\ \n")
-    cat("& & (ref.)")
+    cat("& & \\footnotesize (ref.)")
     for (j in 1:(n - 1)) {
-        cat(" & ($\\times ")
+        cat(" & \\footnotesize ($\\times ")
         cat(format(data_fr[1, paste0("topshare_m", j)]/data_fr[1, "topshare_m0"], digits=2, scientific=FALSE))
         cat("$)")
     }
@@ -197,9 +269,9 @@ d_ply(extrapolation_mre, "income_type", function(data) {
     cat(paste0("\\multirow{2}{*}{P", 100*data_fr$p,"/average} & "))
     cat(paste0(format(data_fr[1, threshold_cols], digits=2, scientific=FALSE), collapse="\\% & "))
     cat("\\% \\\\ \n")
-    cat("& & (ref.)")
+    cat("& & \\footnotesize (ref.)")
     for (j in 1:(n - 1)) {
-        cat(" & ($\\times ")
+        cat(" & \\footnotesize ($\\times ")
         cat(format(data_fr[1, paste0("threshold_m", j)]/data_fr[1, "threshold_m0"], digits=2, scientific=FALSE))
         cat("$)")
     }

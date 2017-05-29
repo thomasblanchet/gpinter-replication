@@ -20,6 +20,8 @@ library(reshape2)
 library(gridExtra)
 library(FMStable)
 library(pbapply)
+library(rationalfun)
+library(utils)
 
 # This is required to get the same font as the rest of the LaTeX document in graphs
 library(fontcm)

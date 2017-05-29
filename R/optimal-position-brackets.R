@@ -49,8 +49,8 @@ max_error <- function(xk) {
 
 # Solve an optimization problem to find the optimal position of the thresholds
 results <- list()
-for (n in c(4, 6, 8, 10)) {
-    xk <- seq(xmin, xmax, length.out=n)
+for (n in c(4, 5, 6, 7, 8)) {
+    xk <- -log(1 - seq(pmin, pmax, length.out=n)) # seq(xmin, xmax, length.out=n)
     # Solve the optimization problem using bracket size d[k] = x[k+1] - x[k],
     # which leads to simpler constraints on the parameter space.
     dk <- diff(xk)[1:(length(xk) - 2)]
@@ -66,12 +66,33 @@ for (n in c(4, 6, 8, 10)) {
         control = list(trace=1, maxit=10000)
     )
 
+    maxerr <- fit$value
     dk_fit <- exp(fit$par)
     xk_fit <- c(cumsum(c(xmin, dk_fit)), xmax)
+    # Run the algorithm repeatedly to ensure convergence is really OK
+    repeat {
+        maxerr_old <- maxerr
+        fit <- optim(
+            par = log(dk_fit),
+            fn = function(theta) {
+                dk <- exp(theta)
+                xk <- c(cumsum(c(xmin, dk)), xmax)
+                return(max_error(xk))
+            },
+            method = "Nelder-Mead",
+            control = list(trace=1, maxit=10000)
+        )
+        maxerr <- fit$value
+        dk_fit <- exp(fit$par)
+        xk_fit <- c(cumsum(c(xmin, dk_fit)), xmax)
+        if (abs((maxerr - maxerr_old)/maxerr_old) < 1e-3) {
+            break
+        }
+    }
 
     results[[n]] <- list(
         pk_fit = 1 - exp(-xk_fit),
-        maxerr = fit$value
+        maxerr = maxerr
     )
     cat(paste0(rep("*", 97), collapse=""))
     cat(paste0("\nOptimal position for ", n - 1, " brackets:\n"))
@@ -85,15 +106,15 @@ for (n in c(4, 6, 8, 10)) {
 filename <- "output/tables/optimal-position-brackets.tex"
 
 sink(filename)
-cat("\\begin{tabular}{ccccc}\\toprule\n")
-cat("& 3 brackets & 5 brackets & 7 brackets & 9 brackets \\\\ \\midrule \n")
-for (i in 1:10) {
+cat("\\begin{tabular}{cccccc}\\toprule\n")
+cat("& 3 brackets & 4 brackets & 5 brackets & 6 brackets & 7 brackets \\\\ \\midrule \n")
+for (i in 1:8) {
     if (i == 1) {
-        cat("\\multirow{10}{*}{\\begin{tabular}[c]{@{}c@{}}optimal placement\\\\ of thresholds\\end{tabular}} ")
+        cat("\\multirow{8}{*}{\\begin{tabular}[c]{@{}c@{}}optimal placement\\\\ of thresholds\\end{tabular}} ")
     }
-    for (n in c(4, 6, 8, 10)) {
+    for (n in c(4, 5, 6, 7, 8)) {
         if (!is.na(results[[n]]$pk_fit[i])) {
-            cat(sprintf("& %2.2f\\%% ", 100*results[[n]]$pk_fit[i]))
+            cat(sprintf("& %2.1f\\%% ", 100*results[[n]]$pk_fit[i]))
         } else {
             cat("& ")
         }
@@ -102,6 +123,6 @@ for (i in 1:10) {
 }
 cat("\\midrule \n")
 cat("\\begin{tabular}{@{}c}maximum relative \\\\ error on top shares\\end{tabular} & ")
-cat(paste0(sapply(c(4, 6, 8, 10), function(n) sprintf("%2.2f\\%%", 100*results[[n]]$maxerr)), collapse=" & "))
+cat(paste0(sapply(c(4, 5, 6, 7, 8), function(n) sprintf("%2.2f\\%%", 100*results[[n]]$maxerr)), collapse=" & "))
 cat(" \\\\ \\bottomrule \n\\end{tabular}\n")
 sink()

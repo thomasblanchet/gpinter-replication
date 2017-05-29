@@ -91,11 +91,18 @@ d_ply(comparisons, c("country", "income_type", "income_type_short", "p"), functi
     data_thresholds$method[data_thresholds$variable == "threshold_m2"] <- "M2"
     data_thresholds$method[data_thresholds$variable == "threshold_m3"] <- "M3"
 
+    data_thresholds$shape[data_thresholds$variable == "threshold_actual"] <- 19
+    data_thresholds$shape[data_thresholds$variable == "threshold_m0"] <- 0
+    data_thresholds$shape[data_thresholds$variable == "threshold_m1"] <- 2
+    data_thresholds$shape[data_thresholds$variable == "threshold_m2"] <- 4
+    data_thresholds$shape[data_thresholds$variable == "threshold_m3"] <- 5
+
     p1 <- ggplot(data_thresholds) +
         geom_line(aes(x=year, y=value, color=method), na.rm=TRUE) +
         geom_point(aes(x=year, y=value, color=method, shape=method), na.rm=TRUE) +
         ylab(paste0("P", 100*p, "/average")) +
         scale_color_brewer(type="qual", palette="Set1") +
+        scale_shape_manual(values=c(19, 0, 2, 4, 5)) +
         theme_bw() + theme(
             legend.title = element_blank(),
             legend.position = "bottom",
@@ -113,12 +120,19 @@ d_ply(comparisons, c("country", "income_type", "income_type_short", "p"), functi
     data_topshare$method[data_topshare$variable == "topshare_m2"] <- "M2"
     data_topshare$method[data_topshare$variable == "topshare_m3"] <- "M3"
 
+    data_topshare$shape[data_thresholds$variable == "threshold_actual"] <- 19
+    data_topshare$shape[data_thresholds$variable == "threshold_m0"] <- 0
+    data_topshare$shape[data_thresholds$variable == "threshold_m1"] <- 2
+    data_topshare$shape[data_thresholds$variable == "threshold_m2"] <- 4
+    data_topshare$shape[data_thresholds$variable == "threshold_m3"] <- 5
+
     p2 <- ggplot(data_topshare) +
         geom_line(aes(x=year, y=value, color=method), na.rm=TRUE) +
         geom_point(aes(x=year, y=value, color=method, shape=method), na.rm=TRUE) +
         ylab(paste0("top ", 100*(1 - p), "% share")) +
         scale_y_continuous(labels=percent) +
         scale_color_brewer(type="qual", palette="Set1") +
+        scale_shape_manual(values=c(19, 0, 2, 4, 5)) +
         theme_bw() + theme(
             legend.position = "none",
             plot.background = element_rect(fill=plot_bg, color=plot_bg),
@@ -158,6 +172,7 @@ d_ply(comparisons, c("country", "income_type", "income_type_short", "p"), functi
         geom_point(aes(x=year, y=value, color=method, shape=method), na.rm=TRUE) +
         ylab(paste0("P", 100*p, "/average")) +
         scale_color_brewer(type="qual", palette="Set1") +
+        scale_shape_manual(values=c(19, 0, 2, 4, 5)) +
         theme_bw() + theme(
             legend.title = element_blank(),
             legend.position = "bottom",
@@ -174,6 +189,7 @@ d_ply(comparisons, c("country", "income_type", "income_type_short", "p"), functi
         ylab(paste0("top ", 100*(1 - p), "% share")) +
         scale_y_continuous(labels=percent) +
         scale_color_brewer(type="qual", palette="Set1") +
+        scale_shape_manual(values=c(19, 0, 2, 4, 5)) +
         theme_bw() + theme(
             legend.position = "none",
             plot.background = element_rect(fill=plot_bg, color=plot_bg),
@@ -245,15 +261,14 @@ d_ply(interpolation_mre, "income_type", function(data) {
     filename <- paste0("output/tables/compare-interpolation/compare-", data$income_type_short[1], ".tex")
 
     # Remove the M4 method from the comparison (comment to keep)
-    data$threshold_m4 <- NULL
-    data$topshare_m4 <- NULL
+    #data$threshold_m4 <- NULL
+    #data$topshare_m4 <- NULL
     # Number of methods left to compare
     n <- (ncol(data) - 5)/2
     # Column for thresholds
     threshold_cols <- paste0("threshold_m", 0:(n - 1))
     topshare_cols <- paste0("topshare_m", 0:(n - 1))
 
-    #print(data)
     sink(filename)
 
     cat(paste0(c("\\begin{tabular}{cc", rep("P@{}", n), "} \\toprule\n"), collapse=""))
@@ -274,9 +289,9 @@ d_ply(interpolation_mre, "income_type", function(data) {
         cat(sprintf("\\multirow{2}{*}{Top %.0f\\%% share} & ", 100*(1 - data_us$p[i])))
         cat(paste0(format(data_us[i, topshare_cols], digits=2, scientific=FALSE), collapse="\\% & "))
         cat("\\% \\\\ \n")
-        cat("& & (ref.)")
+        cat("& & \\footnotesize (ref.)")
         for (j in 1:(n - 1)) {
-            cat(" & ($\\times ")
+            cat(" & \\footnotesize ($\\times ")
             cat(format(data_us[i, paste0("topshare_m", j)]/data_us[i, "topshare_m0"], digits=2, scientific=FALSE))
             cat("$)")
         }
@@ -287,9 +302,9 @@ d_ply(interpolation_mre, "income_type", function(data) {
         cat(sprintf("\\multirow{2}{*}{P%.0f/average} & ", 100*data_us$p[i]))
         cat(paste0(format(data_us[i, threshold_cols], digits=2, scientific=FALSE), collapse="\\% & "))
         cat("\\% \\\\ \n")
-        cat("& & (ref.)")
+        cat("& & \\footnotesize (ref.)")
         for (j in 1:(n - 1)) {
-            cat(" & ($\\times ")
+            cat(" & \\footnotesize ($\\times ")
             cat(format(data_us[i, paste0("threshold_m", j)]/data_us[i, "threshold_m0"], digits=2, scientific=FALSE))
             cat("$)")
         }
@@ -311,9 +326,9 @@ d_ply(interpolation_mre, "income_type", function(data) {
         cat(sprintf("\\multirow{2}{*}{Top %.0f\\%% share} & ", 100*(1 - data_fr$p[i])))
         cat(paste0(format(data_fr[i, topshare_cols], digits=2, scientific=FALSE), collapse="\\% & "))
         cat("\\% \\\\ \n")
-        cat("& & (ref.)")
+        cat("& & \\footnotesize (ref.)")
         for (j in 1:(n - 1)) {
-            cat(" & ($\\times ")
+            cat(" & \\footnotesize ($\\times ")
             cat(format(data_fr[i, paste0("topshare_m", j)]/data_fr[i, "topshare_m0"], digits=2, scientific=FALSE))
             cat("$)")
         }
@@ -324,9 +339,9 @@ d_ply(interpolation_mre, "income_type", function(data) {
         cat(sprintf("\\multirow{2}{*}{P%.0f/average} & ", 100*data_fr$p[i]))
         cat(paste0(format(data_fr[i, threshold_cols], digits=2, scientific=FALSE), collapse="\\% & "))
         cat("\\% \\\\ \n")
-        cat("& & (ref.)")
+        cat("& & \\footnotesize (ref.)")
         for (j in 1:(n - 1)) {
-            cat(" & ($\\times ")
+            cat(" & \\footnotesize ($\\times ")
             cat(format(data_fr[i, paste0("threshold_m", j)]/data_fr[i, "threshold_m0"], digits=2, scientific=FALSE))
             cat("$)")
         }
