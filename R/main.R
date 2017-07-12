@@ -22,6 +22,8 @@ library(FMStable)
 library(pbapply)
 library(rationalfun)
 library(utils)
+library(numDeriv)
+library(rootSolve)
 
 # This is required to get the same font as the rest of the LaTeX document in graphs
 library(fontcm)
@@ -62,12 +64,23 @@ fancy_scientific <- function(x) {
 # Set the project root directory here
 setwd("~/GitHub/gpinter-replication")
 
-# Load the main data file with all the relevant DINA data from France and the
-# United States that was created using the Stata programs
-dina_data <- read.csv("data-clean/data-us-fr.csv", sep=";", stringsAsFactors=FALSE)
+# Load the main data file with all the relevant data for the World Wealth
+# and Income Database. It was generated from the Stata do-files clean-data.do
+data_wid <- read.csv("data-clean/data-wid.csv", stringsAsFactors=FALSE,
+    colClasses = c(
+        "character", "character", "character", "character",
+        "character", "character", "character", "integer",
+        "integer", "numeric", "numeric", "numeric", "numeric",
+        "numeric", "numeric", "numeric", "numeric"
+    )
+)
 
-# Load another file with labor and capital income for the US only
-dina_data_us <- read.csv("data-clean/data-us-labor-capital.csv", sep=";", stringsAsFactors=FALSE)
+# Subset with only France and the United States
+data_us_fr <- subset(data_wid, (iso == "FR" | iso == "US") & pop_code == "j")
+
+# Subset with year with available microdata in France and the United States
+data_micro <- subset(data_us_fr, iso != "FR" | (year > 1993 & year <= 2012))
+data_micro <- subset(data_micro, var_code == "fiinc" | var_code == "ptinc")
 
 # ---------------------------------------------------------------------------- #
 # Plot empirical Pareto curves for the distribution of incomes
@@ -82,10 +95,6 @@ source("R/plot-generalized-pareto-dist.R")
 # ---------------------------------------------------------------------------- #
 # Compare different interpolation methods
 # ---------------------------------------------------------------------------- #
-
-# For testing the interpolation method, we only keep data after 1993 in France
-# (data before was calculated with much smaller sample sizes, or tabulations)
-dina_data <- subset(dina_data, iso != "FR" | (year > 1993 & year <= 2012))
 
 # Functions for different interpolation methods
 source("R/interpolation-methods.R")
@@ -139,5 +148,6 @@ source("R/sampling-error-infinite-variance.R")
 # Dynamic models of inequality
 # ---------------------------------------------------------------------------- #
 
-source("R/pareto-curve-dynamic-model.R")
+source("R/pareto-curve-dynamic-model-income.R")
+source("R/pareto-curve-dynamic-model-wealth.R")
 

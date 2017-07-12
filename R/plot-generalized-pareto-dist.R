@@ -17,6 +17,7 @@ df$b <- 1 + df$xi*df$sigma/((1 - df$xi)*(df$sigma + (1 - df$p)^df$xi*(df$mu*df$x
 
 cat("Plotting: Pareto curve - generalized Pareto distribution - xi = 0.1, ..., 0.9\n")
 
+dir.create("output/plots/generalized-pareto-distribution", showWarnings=FALSE, recursive=TRUE)
 filename <- "output/plots/generalized-pareto-distribution/pareto-curve-gpd-sigma.pdf"
 pdf(filename, family=plot_font, width=4.5, height=3.5)
 print(ggplot(df) +

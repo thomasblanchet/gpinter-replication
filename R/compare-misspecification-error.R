@@ -6,7 +6,7 @@
 # distribution of labor income in 1962.
 # ---------------------------------------------------------------------------- #
 
-data_us_labor <- subset(dina_data_us, income_type_short == "labor" & year == 1962)
+data_us_labor <- subset(data_us_fr, var_code == "pllin" & year == 1970 & iso == "US")
 
 # Interpolate the distribution
 pk <- c(0.1, 0.5, 0.9, 0.99)
@@ -18,16 +18,16 @@ data_us_labor$bracket <- cut(data_us_labor$p,
     labels = FALSE,
     right = FALSE
 )
-short_tab <- ddply(data_us_labor, "bracket", function(data) {
+short_tab <- ddply(data_us_labor, .(bracket), function(data) {
     return(data.frame(
         p = min(data$p)/1e5,
         threshold = data$threshold[which.min(data$p)],
-        topshare = data$topshare[which.min(data$p)]
+        top_share = data$top_share[which.min(data$p)]
     ))
 })
 short_tab <- short_tab[-1, ]
-short_tab$m <- average*short_tab$topshare
-dist <- tabulation_fit(short_tab$p, short_tab$threshold, average, topshare=short_tab$topshare)
+short_tab$m <- average*short_tab$top_share
+dist <- tabulation_fit(short_tab$p, short_tab$threshold, average, topshare=short_tab$top_share)
 
 # Calculate the function phi'''
 data_us_labor <- subset(data_us_labor, p >= 10000 & p <= 99000)
@@ -59,9 +59,10 @@ df$err_dphi[df$type == "observed"] <- ksmooth(
     x = df$x[df$type == "observed"],
     y = df$err_dphi[df$type == "observed"],
     x.points = df$x[df$type == "observed"],
-    bandwidth = 0.25
+    bandwidth = 0.1
 )$y
 
+dir.create("output/plots/compare-misspecification-error", showWarnings=FALSE, recursive=TRUE)
 filename <- "output/plots/compare-misspecification-error/compare-error-phi.pdf"
 pdf(filename, family="CM Roman", width=4.5, height=3.5)
 print(ggplot(df) +
@@ -72,7 +73,7 @@ print(ggplot(df) +
     xlab(expression(paste(italic(x)==-log, "(", 1-italic(p), ")"))) +
     ylab("absolute error") +
     ggtitle(expression(paste("Error on ", phi1, "(", italic(x), ")")),
-        subtitle=expression("US labor income, 1962")) +
+        subtitle=expression("US labor income, 1970")) +
     theme_bw() + theme(
         legend.justification = c(1, 1),
         legend.position = c(1, 1),
@@ -97,7 +98,7 @@ print(ggplot(df) +
     xlab(expression(paste(italic(x)==-log, "(", 1-italic(p), ")"))) +
     ylab("absolute error") +
     ggtitle(expression(paste("Error on ", phi1, "'(", italic(x), ")")),
-        subtitle=expression("US labor income, 1962")) +
+        subtitle=expression("US labor income, 1970")) +
     theme_bw() + theme(
         legend.justification = c(1, 1),
         legend.position = c(1, 1),

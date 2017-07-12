@@ -6,11 +6,12 @@
 # ---------------------------------------------------------------------------- #
 
 # Perform the interpolation with different methods
-comparisons <- ddply(dina_data, c("iso", "country", "year", "income_type", "income_type_short"), function(data) {
+comparisons <- ddply(data_micro, .(iso, country, widcode, var_code, var_name, year), function(data) {
     average <- data$average[1]
-    income_type_short <- data$income_type_short[1]
+    var_code <- data$var_code[1]
+    var_name <- data$var_name[1]
 
-    if (income_type_short == "fiscal") {
+    if (var_code == "fiinc") {
         p_in <- c(0, 0.4, 0.7, 0.9, 0.99, 1)
         p_out <- c(0.5, 0.8, 0.95)
     } else {
@@ -29,12 +30,12 @@ comparisons <- ddply(dina_data, c("iso", "country", "year", "income_type", "inco
         return(data.frame(
             p = min(data$p)/1e5,
             threshold = data$threshold[which.min(data$p)],
-            topshare = data$topshare[which.min(data$p)]
+            top_share = data$top_share[which.min(data$p)]
         ))
     })
     # Remove the first bracket, which includes zero or negative values
     short_tab <- short_tab[-1, ]
-    short_tab$m <- average*short_tab$topshare
+    short_tab$m <- average*short_tab$top_share
 
     # Use the different interpolation methods
     m1 <- method1(p_out, short_tab$p, short_tab$threshold, short_tab$m, average)
@@ -43,45 +44,48 @@ comparisons <- ddply(dina_data, c("iso", "country", "year", "income_type", "inco
     m4 <- method4(p_out, short_tab$p, short_tab$threshold, short_tab$m, average)
 
     # Generalized Pareto interpolation
-    dist <- tabulation_fit(short_tab$p, short_tab$threshold, average, topshare=short_tab$topshare)
+    dist <- tabulation_fit(short_tab$p, short_tab$threshold, average, topshare=short_tab$top_share)
     m0 <- list(
         threshold = fitted_quantile(dist, p_out),
-        topshare = top_share(dist, p_out)
+        top_share = top_share(dist, p_out)
     )
 
     return(data.frame(
         p = p_out,
 
-        threshold_actual = sapply(p_out, function(p) data[data$p == p*1e5, "threshold"])/average,
+        threshold_actual = sapply(p_out, function(p) data[data$p == round(p*1e5), "threshold"])/average,
         threshold_m0 = m0$threshold/average,
         threshold_m1 = m1$threshold/average,
         threshold_m2 = m2$threshold/average,
         threshold_m3 = m3$threshold/average,
         threshold_m4 = m4$threshold/average,
 
-        topshare_actual = sapply(p_out, function(p) data[data$p == p*1e5, "topshare"]),
-        topshare_m0 = m0$topshare,
-        topshare_m1 = m1$topshare,
-        topshare_m2 = m2$topshare,
-        topshare_m3 = m3$topshare,
-        topshare_m4 = m4$topshare
+        top_share_actual = sapply(p_out, function(p) data[data$p == round(p*1e5), "top_share"]),
+        top_share_m0 = m0$top_share,
+        top_share_m1 = m1$top_share,
+        top_share_m2 = m2$top_share,
+        top_share_m3 = m3$top_share,
+        top_share_m4 = m4$top_share
     ))
 })
 
 # Plot the different estimates
-d_ply(comparisons, c("country", "income_type", "income_type_short", "p"), function(data) {
-    country           <- data$country[1]
-    iso               <- data$iso[1]
-    income_type_short <- data$income_type_short[1]
-    p                 <- data$p[1]
+d_ply(comparisons, .(iso, country, widcode, var_code, var_name, p), function(data) {
+    p <- data$p[1]
+    iso <- data$iso[1]
+    year <- data$year[1]
+    average <- data$average[1]
+    country <- data$country[1]
+    var_code <- data$var_code[1]
+    var_name <- data$var_name[1]
 
     data$p            <- NULL
     data$threshold_m4 <- NULL
-    data$topshare_m4  <- NULL
+    data$top_share_m4 <- NULL
 
-    data <- melt(data, id.vars=c("iso", "country", "year", "income_type", "income_type_short"))
+    data <- melt(data, id.vars=c("iso", "country", "widcode", "var_code", "var_name", "year"))
 
-    cat(paste0("Plotting: comparison time series - ", country, " - ", income_type_short, " - ", 100*p, "\n"))
+    cat(paste0("* plotting: comparison time series - ", country, " - ", var_name, " - ", 100*p, "\n"))
 
     # Create plot for thresholds
     data_thresholds <- data[grepl("threshold", data$variable), ]
@@ -101,6 +105,7 @@ d_ply(comparisons, c("country", "income_type", "income_type_short", "p"), functi
         geom_line(aes(x=year, y=value, color=method), na.rm=TRUE) +
         geom_point(aes(x=year, y=value, color=method, shape=method), na.rm=TRUE) +
         ylab(paste0("P", 100*p, "/average")) +
+        scale_x_continuous(breaks=pretty_breaks()) +
         scale_color_brewer(type="qual", palette="Set1") +
         scale_shape_manual(values=c(19, 0, 2, 4, 5)) +
         theme_bw() + theme(
@@ -109,43 +114,62 @@ d_ply(comparisons, c("country", "income_type", "income_type_short", "p"), functi
             plot.background = element_rect(fill=plot_bg, color=plot_bg),
             panel.background = element_rect(fill=plot_bg),
             legend.key = element_rect(fill=plot_bg),
+            legend.background = element_rect(fill=plot_bg),
             text = element_text(color=plot_text_color)
         )
 
+    dir.create("output/plots/comparison-time-series/interpolation", showWarnings=FALSE, recursive=TRUE)
+    filename <- paste0("output/plots/comparison-time-series/interpolation/thr-", iso, "-", var_code, "-", 100*p, ".pdf")
+    pdf(filename, family=plot_font, width=4.5, height=3.5)
+    print(p1)
+    dev.off()
+    embed_fonts(path.expand(filename))
+
     # Create plot for top shares
-    data_topshare <- data[grepl("topshare", data$variable), ]
-    data_topshare$method[data_topshare$variable == "topshare_actual"] <- "data"
-    data_topshare$method[data_topshare$variable == "topshare_m0"] <- "M0"
-    data_topshare$method[data_topshare$variable == "topshare_m1"] <- "M1"
-    data_topshare$method[data_topshare$variable == "topshare_m2"] <- "M2"
-    data_topshare$method[data_topshare$variable == "topshare_m3"] <- "M3"
+    data_top_share <- data[grepl("top_share", data$variable), ]
+    data_top_share$method[data_top_share$variable == "top_share_actual"] <- "data"
+    data_top_share$method[data_top_share$variable == "top_share_m0"] <- "M0"
+    data_top_share$method[data_top_share$variable == "top_share_m1"] <- "M1"
+    data_top_share$method[data_top_share$variable == "top_share_m2"] <- "M2"
+    data_top_share$method[data_top_share$variable == "top_share_m3"] <- "M3"
 
-    data_topshare$shape[data_thresholds$variable == "threshold_actual"] <- 19
-    data_topshare$shape[data_thresholds$variable == "threshold_m0"] <- 0
-    data_topshare$shape[data_thresholds$variable == "threshold_m1"] <- 2
-    data_topshare$shape[data_thresholds$variable == "threshold_m2"] <- 4
-    data_topshare$shape[data_thresholds$variable == "threshold_m3"] <- 5
+    data_top_share$shape[data_thresholds$variable == "top_share_actual"] <- 19
+    data_top_share$shape[data_thresholds$variable == "top_share_m0"] <- 0
+    data_top_share$shape[data_thresholds$variable == "top_share_m1"] <- 2
+    data_top_share$shape[data_thresholds$variable == "top_share_m2"] <- 4
+    data_top_share$shape[data_thresholds$variable == "top_share_m3"] <- 5
 
-    p2 <- ggplot(data_topshare) +
+    p2 <- ggplot(data_top_share) +
         geom_line(aes(x=year, y=value, color=method), na.rm=TRUE) +
         geom_point(aes(x=year, y=value, color=method, shape=method), na.rm=TRUE) +
         ylab(paste0("top ", 100*(1 - p), "% share")) +
+        scale_x_continuous(breaks=pretty_breaks()) +
         scale_y_continuous(labels=percent) +
         scale_color_brewer(type="qual", palette="Set1") +
         scale_shape_manual(values=c(19, 0, 2, 4, 5)) +
         theme_bw() + theme(
-            legend.position = "none",
+            legend.title = element_blank(),
+            legend.position = "bottom",
             plot.background = element_rect(fill=plot_bg, color=plot_bg),
             panel.background = element_rect(fill=plot_bg),
             legend.key = element_rect(fill=plot_bg),
+            legend.background = element_rect(fill=plot_bg),
             text = element_text(color=plot_text_color)
         )
+
+    dir.create("output/plots/comparison-time-series/interpolation", showWarnings=FALSE, recursive=TRUE)
+    filename <- paste0("output/plots/comparison-time-series/interpolation/topshare-", iso, "-", var_code, "-", 100*p, ".pdf")
+    pdf(filename, family=plot_font, width=4.5, height=3.5)
+    print(p2)
+    dev.off()
+    embed_fonts(path.expand(filename))
 
     # Extract the legend
     legend <- g_legend(p1)
 
-    filename <- paste0("output/plots/comparison-time-series/time-series-", iso, "-", income_type_short, "-", 100*p, ".pdf")
-    pdf(filename, family=plot_font, width=9, height=4)
+    dir.create("output/plots/comparison-time-series/interpolation", showWarnings=FALSE, recursive=TRUE)
+    filename <- paste0("output/plots/comparison-time-series/interpolation/", iso, "-", var_code, "-", 100*p, ".pdf")
+    pdf(filename, family=plot_font, width=4, height=9)
     grid.arrange(
         arrangeGrob(
             p1 + theme(legend.position="none"),
@@ -162,15 +186,16 @@ d_ply(comparisons, c("country", "income_type", "income_type_short", "p"), functi
     data_thresholds$value[data_thresholds$method == "M2"] <- NA
     data_thresholds <- data_thresholds[data_thresholds$year >= 2000, ]
 
-    data_topshare$value[data_topshare$method == "M1"] <- NA
-    data_topshare$value[data_topshare$method == "M2"] <- NA
-    data_topshare <- data_topshare[data_topshare$year >= 2000, ]
+    data_top_share$value[data_top_share$method == "M1"] <- NA
+    data_top_share$value[data_top_share$method == "M2"] <- NA
+    data_top_share <- data_top_share[data_top_share$year >= 2000, ]
 
     # Create plot for thresholds
     p1 <- ggplot(data_thresholds) +
         geom_line(aes(x=year, y=value, color=method), na.rm=TRUE) +
         geom_point(aes(x=year, y=value, color=method, shape=method), na.rm=TRUE) +
         ylab(paste0("P", 100*p, "/average")) +
+        scale_x_continuous(breaks=pretty_breaks()) +
         scale_color_brewer(type="qual", palette="Set1") +
         scale_shape_manual(values=c(19, 0, 2, 4, 5)) +
         theme_bw() + theme(
@@ -179,29 +204,48 @@ d_ply(comparisons, c("country", "income_type", "income_type_short", "p"), functi
             plot.background = element_rect(fill=plot_bg, color=plot_bg),
             panel.background = element_rect(fill=plot_bg),
             legend.key = element_rect(fill=plot_bg),
+            legend.background = element_rect(fill=plot_bg),
             text = element_text(color=plot_text_color)
         )
 
+    dir.create("output/plots/comparison-time-series/interpolation", showWarnings=FALSE, recursive=TRUE)
+    filename <- paste0("output/plots/comparison-time-series/interpolation/recent-thr-", iso, "-", var_code, "-", 100*p, ".pdf")
+    pdf(filename, family=plot_font, width=4.5, height=3.5)
+    print(p1)
+    dev.off()
+    embed_fonts(path.expand(filename))
+
     # Create plot for top shares
-    p2 <- ggplot(data_topshare) +
+    p2 <- ggplot(data_top_share) +
         geom_line(aes(x=year, y=value, color=method), na.rm=TRUE) +
         geom_point(aes(x=year, y=value, color=method, shape=method), na.rm=TRUE) +
         ylab(paste0("top ", 100*(1 - p), "% share")) +
+        scale_x_continuous(breaks=pretty_breaks()) +
         scale_y_continuous(labels=percent) +
         scale_color_brewer(type="qual", palette="Set1") +
         scale_shape_manual(values=c(19, 0, 2, 4, 5)) +
         theme_bw() + theme(
-            legend.position = "none",
+            legend.title = element_blank(),
+            legend.position = "bottom",
             plot.background = element_rect(fill=plot_bg, color=plot_bg),
             panel.background = element_rect(fill=plot_bg),
             legend.key = element_rect(fill=plot_bg),
+            legend.background = element_rect(fill=plot_bg),
             text = element_text(color=plot_text_color)
         )
+
+    dir.create("output/plots/comparison-time-series/interpolation", showWarnings=FALSE, recursive=TRUE)
+    filename <- paste0("output/plots/comparison-time-series/interpolation/recent-topshare-", iso, "-", var_code, "-", 100*p, ".pdf")
+    pdf(filename, family=plot_font, width=4.5, height=3.5)
+    print(p2)
+    dev.off()
+    embed_fonts(path.expand(filename))
 
     # Extract the legend
     legend <- g_legend(p1)
 
-    filename <- paste0("output/plots/comparison-time-series/time-series-recent-", iso, "-", income_type_short, "-", 100*p, ".pdf")
+    dir.create("output/plots/comparison-time-series/interpolation", showWarnings=FALSE, recursive=TRUE)
+    filename <- paste0("output/plots/comparison-time-series/interpolation/recent-", iso, "-", var_code, "-", 100*p, ".pdf")
     pdf(filename, family=plot_font, width=9, height=4)
     grid.arrange(
         arrangeGrob(
@@ -219,12 +263,12 @@ d_ply(comparisons, c("country", "income_type", "income_type_short", "p"), functi
 relerr <- function(a, b) abs(100*(b - a)/a)
 
 interpolation_re <- data.frame(
-    country           = comparisons$country,
-    iso               = comparisons$iso,
-    year              = comparisons$year,
-    income_type       = comparisons$income_type,
-    income_type_short = comparisons$income_type_short,
-    p                 = comparisons$p,
+    p        = comparisons$p,
+    iso      = comparisons$iso,
+    year     = comparisons$year,
+    country  = comparisons$country,
+    var_code = comparisons$var_code,
+    var_name = comparisons$var_name,
 
     threshold_m0 = relerr(comparisons$threshold_actual, comparisons$threshold_m0),
     threshold_m1 = relerr(comparisons$threshold_actual, comparisons$threshold_m1),
@@ -232,15 +276,15 @@ interpolation_re <- data.frame(
     threshold_m3 = relerr(comparisons$threshold_actual, comparisons$threshold_m3),
     threshold_m4 = relerr(comparisons$threshold_actual, comparisons$threshold_m4),
 
-    topshare_m0 = relerr(comparisons$topshare_actual, comparisons$topshare_m0),
-    topshare_m1 = relerr(comparisons$topshare_actual, comparisons$topshare_m1),
-    topshare_m2 = relerr(comparisons$topshare_actual, comparisons$topshare_m2),
-    topshare_m3 = relerr(comparisons$topshare_actual, comparisons$topshare_m3),
-    topshare_m4 = relerr(comparisons$topshare_actual, comparisons$topshare_m4)
+    top_share_m0 = relerr(comparisons$top_share_actual, comparisons$top_share_m0),
+    top_share_m1 = relerr(comparisons$top_share_actual, comparisons$top_share_m1),
+    top_share_m2 = relerr(comparisons$top_share_actual, comparisons$top_share_m2),
+    top_share_m3 = relerr(comparisons$top_share_actual, comparisons$top_share_m3),
+    top_share_m4 = relerr(comparisons$top_share_actual, comparisons$top_share_m4)
 )
 
 # Calculate the mean of the error
-interpolation_mre <- ddply(interpolation_re, c("country", "iso", "income_type", "income_type_short", "p"), function(data) {
+interpolation_mre <- ddply(interpolation_re, .(country, iso, var_code, var_name, p), function(data) {
     return(data.frame(
         threshold_m0 = mean(data$threshold_m0),
         threshold_m1 = mean(data$threshold_m1),
@@ -248,26 +292,27 @@ interpolation_mre <- ddply(interpolation_re, c("country", "iso", "income_type", 
         threshold_m3 = mean(data$threshold_m3),
         threshold_m4 = mean(data$threshold_m4),
 
-        topshare_m0 = mean(data$topshare_m0),
-        topshare_m1 = mean(data$topshare_m1),
-        topshare_m2 = mean(data$topshare_m2),
-        topshare_m3 = mean(data$topshare_m3),
-        topshare_m4 = mean(data$topshare_m4)
+        top_share_m0 = mean(data$top_share_m0),
+        top_share_m1 = mean(data$top_share_m1),
+        top_share_m2 = mean(data$top_share_m2),
+        top_share_m3 = mean(data$top_share_m3),
+        top_share_m4 = mean(data$top_share_m4)
     ))
 })
 
 # Generate LaTeX tables comparing the results
-d_ply(interpolation_mre, "income_type", function(data) {
-    filename <- paste0("output/tables/compare-interpolation/compare-", data$income_type_short[1], ".tex")
+d_ply(interpolation_mre, "var_code", function(data) {
+    dir.create("output/tables/compare-interpolation", showWarnings=FALSE, recursive=TRUE)
+    filename <- paste0("output/tables/compare-interpolation/compare-", data$var_code[1], ".tex")
 
     # Remove the M4 method from the comparison (comment to keep)
-    #data$threshold_m4 <- NULL
-    #data$topshare_m4 <- NULL
+    data$threshold_m4 <- NULL
+    data$top_share_m4 <- NULL
     # Number of methods left to compare
     n <- (ncol(data) - 5)/2
     # Column for thresholds
     threshold_cols <- paste0("threshold_m", 0:(n - 1))
-    topshare_cols <- paste0("topshare_m", 0:(n - 1))
+    topshare_cols <- paste0("top_share_m", 0:(n - 1))
 
     sink(filename)
 
@@ -292,7 +337,7 @@ d_ply(interpolation_mre, "income_type", function(data) {
         cat("& & \\footnotesize (ref.)")
         for (j in 1:(n - 1)) {
             cat(" & \\footnotesize ($\\times ")
-            cat(format(data_us[i, paste0("topshare_m", j)]/data_us[i, "topshare_m0"], digits=2, scientific=FALSE))
+            cat(format(data_us[i, paste0("top_share_m", j)]/data_us[i, "top_share_m0"], digits=2, scientific=FALSE))
             cat("$)")
         }
         cat(paste0("\\\\ \\cmidrule(l){2-", 2 + n, "}\n"))
@@ -329,7 +374,7 @@ d_ply(interpolation_mre, "income_type", function(data) {
         cat("& & \\footnotesize (ref.)")
         for (j in 1:(n - 1)) {
             cat(" & \\footnotesize ($\\times ")
-            cat(format(data_fr[i, paste0("topshare_m", j)]/data_fr[i, "topshare_m0"], digits=2, scientific=FALSE))
+            cat(format(data_fr[i, paste0("top_share_m", j)]/data_fr[i, "top_share_m0"], digits=2, scientific=FALSE))
             cat("$)")
         }
         cat(paste0("\\\\ \\cmidrule(l){2-", 2 + n, "}\n"))

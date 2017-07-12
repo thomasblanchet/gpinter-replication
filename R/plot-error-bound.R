@@ -17,6 +17,7 @@ df <- data.frame(
     edy = interpolation_deriv_error_bound_cons(x, xk, 1)
 )
 
+dir.create("output/plots/misspecification-error-bound", showWarnings=FALSE, recursive=TRUE)
 filename <- "output/plots/misspecification-error-bound/error-bound-phi.pdf"
 pdf(filename, family=plot_font, width=4.5, height=3.5)
 print(ggplot(df) + geom_line(aes(x=x, y=ey)) +

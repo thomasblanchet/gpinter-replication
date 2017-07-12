@@ -23,7 +23,7 @@ method1 <- function(p, pk, qk, mk, average) {
     # Top shares
     s <- e*(1 - p)/average
 
-    return(list(threshold=q, topshare=s))
+    return(list(threshold=q, top_share=s))
 }
 
 # ---------------------------------------------------------------------------- #
@@ -49,7 +49,7 @@ method2 <- function(p, pk, qk, average) {
     q <- qk[k]*((1 - p)/(1 - pk[k]))^(-1/ak[k])
     u <- ak[k]/(ak[k] - 1) * qk[k]^ak[k] * (qk[k]^(1 - ak[k]) - q^(1 - ak[k])) * (1 - pk[k])
 
-    return(list(threshold=q, topshare=(mk[k] - u)/average))
+    return(list(threshold=q, top_share=(mk[k] - u)/average))
 }
 
 # ---------------------------------------------------------------------------- #
@@ -82,7 +82,7 @@ method3 <- function(p, pk, qk, mk, average) {
             q0[k] + (p - p0[k])/f0[k],
             qstar[k] + (p - pstar[k])/f1[k]
         ),
-        topshare = ifelse(p <= pstar[k],
+        top_share = ifelse(p <= pstar[k],
             (pstar[k] - p)*(q0[k] + 0.5*(p - p0[k] + pstar[k] - p0[k])/f0[k]) + mstar[k],
             (p1[k] - p)*(qstar[k] + 0.5*(p - pstar[k] + p1[k] - pstar[k])/f1[k]) + m1[k]
         )/average
@@ -132,5 +132,5 @@ method4 <- function(p, pk, qk, mk, average) {
     q <- (qk[k]^(-ak[k]) - ak[k]/kk[k]*(p - pk[k]))^(-1/ak[k])
     m <- mk[k] - kk[k]/(ak[k] - 1)*(qk[k]^(1 - ak[k]) - q^(1 - ak[k]))
 
-    return(list(threshold=q, topshare=m/average))
+    return(list(threshold=q, top_share=m/average))
 }

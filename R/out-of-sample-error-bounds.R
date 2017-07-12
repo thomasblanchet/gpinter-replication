@@ -6,7 +6,7 @@
 # ---------------------------------------------------------------------------- #
 
 # On the most recent ten years: calculate the envelope of phi'''
-envelope_phi_d3 <- ddply(subset(dina_data, income_type_short == "pretax"), c("iso", "country"), function(data) {
+envelope_phi_d3 <- ddply(subset(data_micro, var_code == "ptinc"), .(iso, country), function(data) {
     # Only keep the most recent ten years
     yearmax <- max(data$year)
     data <- subset(data, year > yearmax - 10)
@@ -31,7 +31,7 @@ envelope_phi_d3 <- ddply(subset(dina_data, income_type_short == "pretax"), c("is
 })
 
 # Calculate an error bound implied by this envelope
-err_bound_theory <- ddply(envelope_phi_d3, c("iso", "country"), function(data) {
+err_bound_theory <- ddply(envelope_phi_d3, .(iso, country), function(data) {
     # Create a function for the envelope
     phi_d3_fun <- splinefun(data$x, data$max_phi_d3, method="monoH.FC")
 
@@ -49,10 +49,10 @@ err_bound_theory <- ddply(envelope_phi_d3, c("iso", "country"), function(data) {
 })
 
 # Calculate the actual error over the least recent period
-err_actual <- ddply(subset(dina_data, income_type_short == "pretax"), c("iso", "country", "year"), function(data) {
+err_actual <- ddply(subset(data_micro, var_code == "ptinc"), .(iso, country, year), function(data) {
     # Only keep the least recent years
-    yearmax <- max(subset(dina_data, iso == data$iso[1] &
-            income_type_short == data$income_type_short[1])$year)
+    yearmax <- max(subset(data_micro, iso == data$iso[1] &
+            var_code == data$var_code[1])$year)
     if (data$year[1] > yearmax - 10) {
         return(NULL)
     }
@@ -75,16 +75,16 @@ err_actual <- ddply(subset(dina_data, income_type_short == "pretax"), c("iso", "
         return(data.frame(
             p = min(data$p)/1e5,
             threshold = data$threshold[which.min(data$p)],
-            topshare = data$topshare[which.min(data$p)]
+            top_share = data$top_share[which.min(data$p)]
         ))
     })
     # Remove the first bracket, which includes zero or negative values
     average <- data$average[1]
     short_tab <- short_tab[-1, ]
-    short_tab$m <- average*short_tab$topshare
+    short_tab$m <- average*short_tab$top_share
 
     # Generalized Pareto interpolation
-    dist <- tabulation_fit(short_tab$p, short_tab$threshold, average, topshare=short_tab$topshare)
+    dist <- tabulation_fit(short_tab$p, short_tab$threshold, average, topshare=short_tab$top_share)
 
     phi_actual <- sapply(p_out, function(p) data[data$p == round(1e5*p), "phi"])
     dphi_actual <- sapply(p_out, function(p) data[data$p == round(1e5*p), "dphi"])
@@ -97,11 +97,12 @@ err_actual <- ddply(subset(dina_data, income_type_short == "pretax"), c("iso", "
 })
 
 # Get the maximum over all years
-err_bound_actual <- ddply(err_actual, c("iso", "country", "p"), function(data) {
+err_bound_actual <- ddply(err_actual, .(iso, country, p), function(data) {
     return(data.frame(p=data$p[1], err_phi=max(data$err_phi), err_dphi=max(data$err_dphi)))
 })
 
 # Create the LaTeX table
+dir.create("output/tables", showWarnings=FALSE, recursive=TRUE)
 filename <- "output/tables/out-of-sample-error-bounds.tex"
 
 sink(filename)

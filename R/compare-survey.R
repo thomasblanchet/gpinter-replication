@@ -6,7 +6,7 @@
 # ---------------------------------------------------------------------------- #
 
 # Estimate the distribution of pre-tax national income in the US in 2014
-data_us_2010 <- subset(dina_data, year == "2014" & iso == "US" & income_type_short == "pretax")
+data_us_2010 <- subset(data_micro, year == "2010" & iso == "US" & var_code == "ptinc")
 
 p_in <- c(0, 0.1, 0.5, 0.9, 0.99, 1)
 p_out <- c(0.30, 0.5, 0.75, 0.9, 0.95, 0.99, 0.999)
@@ -18,18 +18,18 @@ data_us_2010$bracket <- cut(data_us_2010$p,
     right = FALSE
 )
 
-short_tab <- ddply(data_us_2010, "bracket", function(data) {
+short_tab <- ddply(data_us_2010, .(bracket), function(data) {
     return(data.frame(
         p = min(data$p)/1e5,
         threshold = data$threshold[which.min(data$p)],
-        topshare = data$topshare[which.min(data$p)]
+        top_share = data$top_share[which.min(data$p)]
     ))
 })
 
 average <- data_us_2010$average[1]
 short_tab <- short_tab[-1, ]
 
-dist <- tabulation_fit(short_tab$p, short_tab$threshold, average, topshare=short_tab$topshare)
+dist <- tabulation_fit(short_tab$p, short_tab$threshold, average, topshare=short_tab$top_share)
 
 # Simulate that distribution
 set.seed(19920902)
@@ -79,6 +79,8 @@ for (i in 1:length(k_all)) {
 
 # Generate LaTeX table
 n <- length(k_all) + 1
+
+dir.create("output/tables", showWarnings=FALSE, recursive=TRUE)
 filename <- paste0("output/tables/compare-survey.tex")
 
 sink(filename)

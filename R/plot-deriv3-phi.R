@@ -6,7 +6,7 @@
 # ---------------------------------------------------------------------------- #
 
 # Estimate phi'''
-phi_d3_estim <- ddply(dina_data, c("iso", "country", "year", "income_type", "income_type_short"), function(data) {
+phi_d3_estim <- ddply(data_micro, .(iso, country, widcode, var_code, var_name, year), function(data) {
     data <- data[data$p >= 10000 & data$p <= 99000, ]
 
     p <- data$p/1e5
@@ -19,7 +19,7 @@ phi_d3_estim <- ddply(dina_data, c("iso", "country", "year", "income_type", "inc
 })
 
 # Summarize the estimates
-phi_d3_summ <- ddply(phi_d3_estim, c("iso", "country", "income_type", "income_type_short", "x"), function(data) {
+phi_d3_summ <- ddply(phi_d3_estim, .(iso, country, widcode, var_code, var_name, x), function(data) {
     p1 <- quantile(data$d3_phi, 0.1)
     p9 <- quantile(data$d3_phi, 0.9)
     mean <- mean(data$d3_phi)
@@ -30,15 +30,17 @@ phi_d3_summ <- ddply(phi_d3_estim, c("iso", "country", "income_type", "income_ty
 })
 
 # Plot the function phi'''
-d_ply(phi_d3_summ, c("country", "income_type"), function(data) {
-    country           <- data$country[1]
-    income_type       <- data$income_type[1]
-    year_min          <- data$year_min[1]
-    year_max          <- data$year_max[1]
-    iso               <- data$iso[1]
-    income_type_short <- data$income_type_short[1]
+d_ply(phi_d3_summ, .(country, var_code), function(data) {
+    iso <- data$iso[1]
+    year_min <- data$year_min[1]
+    year_max <- data$year_max[1]
+    average <- data$average[1]
+    country <- data$country[1]
+    var_code <- data$var_code[1]
+    var_name <- data$var_name[1]
 
-    filename <- paste0("output/plots/estim-deriv3-phi/estim-phi-d3-", iso, "-", income_type_short, ".pdf")
+    dir.create("output/plots/estim-deriv3-phi", showWarnings=FALSE, recursive=TRUE)
+    filename <- paste0("output/plots/estim-deriv3-phi/", iso, "-", var_code, ".pdf")
     pdf(filename, family=plot_font, width=4.5, height=3.5)
     print(ggplot(data) +
         geom_line(aes(x=x, y=p1), color="grey", na.rm=TRUE) +

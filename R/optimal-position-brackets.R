@@ -7,7 +7,7 @@
 # ---------------------------------------------------------------------------- #
 
 # Calculate the median profile for phi''' for France and the United States
-data_pretax <- subset(dina_data, income_type_short == "pretax")
+data_pretax <- subset(data_micro, var_code == "ptinc")
 data_pretax <- subset(data_pretax, p >= 10000 & p <= 99900)
 
 pmin <- 0.1
@@ -16,7 +16,7 @@ xmin <- -log(1 - pmin)
 xmax <- -log(1 - pmax)
 xout <- seq(xmin, xmax, length.out=1000)
 
-phi_d3_data <- ddply(data_pretax, c("year", "country"), function(data) {
+phi_d3_data <- ddply(data_pretax, .(year, country), function(data) {
     p <- data$p/1e5
     x <- -log(1 - p)
 
@@ -26,7 +26,7 @@ phi_d3_data <- ddply(data_pretax, c("year", "country"), function(data) {
 })
 
 # Calculate median profile
-phi_d3_median <- ddply(phi_d3_data, "x", function(data) {
+phi_d3_median <- ddply(phi_d3_data, .(x), function(data) {
     return(data.frame(x=data$x[1], phi_d3=median(data$phi_d3)))
 })
 
@@ -50,7 +50,7 @@ max_error <- function(xk) {
 # Solve an optimization problem to find the optimal position of the thresholds
 results <- list()
 for (n in c(4, 5, 6, 7, 8)) {
-    xk <- -log(1 - seq(pmin, pmax, length.out=n)) # seq(xmin, xmax, length.out=n)
+    xk <- -log(1 - seq(pmin, pmax, length.out=n))
     # Solve the optimization problem using bracket size d[k] = x[k+1] - x[k],
     # which leads to simpler constraints on the parameter space.
     dk <- diff(xk)[1:(length(xk) - 2)]
@@ -103,6 +103,7 @@ for (n in c(4, 5, 6, 7, 8)) {
 }
 
 # Create the LaTeX table comparing the results
+dir.create("output/tables", showWarnings=FALSE, recursive=TRUE)
 filename <- "output/tables/optimal-position-brackets.tex"
 
 sink(filename)

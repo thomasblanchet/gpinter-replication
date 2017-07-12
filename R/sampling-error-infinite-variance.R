@@ -3,7 +3,7 @@
 # Thomas Blanchet, Juliette Fournier, Thomas Piketty
 # ---------------------------------------------------------------------------- #
 # Estimate and plot the sampling error for the US distribution of capital income
-# in 1962 (which has infinite variance).
+# in 1970 (which has infinite variance).
 # ---------------------------------------------------------------------------- #
 
 # ---------------------------------------------------------------------------- #
@@ -194,10 +194,10 @@ sampling_error_infinite <- function(x, pk, samplesize, dist) {
 }
 
 # ---------------------------------------------------------------------------- #
-# Application to US capital income, 1962
+# Application to US capital income, 1970
 # ---------------------------------------------------------------------------- #
 
-data_us_capital <- subset(dina_data_us, year == 1962 & income_type_short == "capital")
+data_us_capital <- subset(data_us_fr, year == 1970 & var_code == "pkkin" & iso == "US")
 
 # Interpolate the distribution (for estimates of the density, etc.)
 data_us_capital$bracket <- cut(data_us_capital$p,
@@ -210,20 +210,20 @@ short_tab <- ddply(data_us_capital, "bracket", function(data) {
     return(data.frame(
         p = min(data$p)/1e5,
         threshold = data$threshold[which.min(data$p)],
-        topshare = data$topshare[which.min(data$p)]
+        top_share = data$top_share[which.min(data$p)]
     ))
 })
 average <- data_us_capital$average[1]
 # Remove the first bracket, which includes zero or negative values
 short_tab <- short_tab[-1, ]
-short_tab$m <- average*short_tab$topshare
+short_tab$m <- average*short_tab$top_share
 
 # Generalized Pareto interpolation
 dist <- tabulation_fit(short_tab$p, short_tab$threshold,
-    average, topshare=short_tab$topshare)
+    average, topshare=short_tab$top_share)
 
 # Estimate sampling error
-n <- data_us_labor$population[1]
+n <- data_us_capital$population[1]
 pk <- short_tab$p
 xk <- -log(1 - pk)
 x_out <- seq(-log(1 - 0.1), -log(1 - 0.99), length.out=1000)
@@ -235,17 +235,18 @@ sampling_error <- data.frame(
 )
 
 # Plot
+dir.create("output/plots/sampling-error", showWarnings=FALSE, recursive=TRUE)
 filename <- "output/plots/sampling-error/error-phi-infinite-variance.pdf"
 pdf(filename, family=plot_font, width=4.5, height=3.5)
 print(ggplot(data=sampling_error) + geom_line(aes(x=x, y=phi), na.rm=TRUE) +
     geom_vline(xintercept=xk, linetype="dashed") +
-    annotate("text", label="paste(italic(p) == 10, '%')", x=xk[1] + 0.16, y=1.8e-5, angle=90, parse=TRUE) +
-    annotate("text", label="paste(italic(p) == 50, '%')", x=xk[2] + 0.16, y=1.8e-5, angle=90, parse=TRUE) +
-    annotate("text", label="paste(italic(p) == 90, '%')", x=xk[3] + 0.16, y=1.8e-5, angle=90, parse=TRUE) +
-    annotate("text", label="paste(italic(p) == 99, '%')", x=xk[4] - 0.16, y=1.8e-5, angle=90, parse=TRUE) +
+    annotate("text", label="paste(italic(p) == 10, '%')", x=xk[1] + 0.16, y=1.9e-5, angle=90, parse=TRUE) +
+    annotate("text", label="paste(italic(p) == 50, '%')", x=xk[2] + 0.16, y=1.9e-5, angle=90, parse=TRUE) +
+    annotate("text", label="paste(italic(p) == 90, '%')", x=xk[3] + 0.16, y=1.9e-5, angle=90, parse=TRUE) +
+    annotate("text", label="paste(italic(p) == 99, '%')", x=xk[4] - 0.16, y=1.9e-5, angle=90, parse=TRUE) +
     xlab(expression(paste(italic(x) == -log, "(", 1 - italic(p), ")"))) +
     scale_y_continuous(name="mean absolute error", labels=fancy_scientific) +
-    ggtitle(expression(paste(phi1, '(', italic(x), ") for US capital income (1962)")),
+    ggtitle(expression(paste(phi1, '(', italic(x), ") for US capital income (1970)")),
         subtitle=expression("for a tabulation with"~italic(p)~"= 10%, 50%, 90% and 99%")) +
     theme_bw() + theme(
         plot.title = element_text(hjust=0.5),
@@ -268,7 +269,7 @@ print(ggplot(data=sampling_error) + geom_line(aes(x=x, y=dphi), na.rm=TRUE) +
     annotate("text", label="paste(italic(p) == 99, '%')", x=xk[4] - 0.16, y=4.5e-5, angle=90, parse=TRUE) +
     xlab(expression(paste(italic(x) == -log, "(", 1 - italic(p), ")"))) +
     scale_y_continuous(name="mean absolute error", labels=fancy_scientific, limits=c(0, 5e-5)) +
-    ggtitle(expression(paste(phi1, "'(", italic(x), ") for US capital income (1962)")),
+    ggtitle(expression(paste(phi1, "'(", italic(x), ") for US capital income (1970)")),
         subtitle=expression("for a tabulation with"~italic(p)~"= 10%, 50%, 90% and 99%")) +
     theme_bw() + theme(
         plot.title = element_text(hjust=0.5),

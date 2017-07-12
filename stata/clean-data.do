@@ -46,6 +46,22 @@ drop to_keep
 save "data-temp/wid-db.dta", replace
 
 // -------------------------------------------------------------------------- //
+// Populations
+// -------------------------------------------------------------------------- //
+
+use "data-temp/wid-db.dta", clear
+
+// Identify age & population type
+generate pop = substr(widcode, 6, 4)
+
+// Keep populations only
+keep if p == "p0p100"
+drop if missing(n)
+keep iso year pop n
+
+save "data-temp/populations.dta", replace
+
+// -------------------------------------------------------------------------- //
 // Overall averages
 // -------------------------------------------------------------------------- //
 
@@ -106,9 +122,14 @@ use "data-temp/top-shares.dta", clear
 merge 1:1 iso year widcode p using "data-temp/thresholds.dta", nogenerate keep(match)
 merge n:1 iso year widcode using "data-temp/averages.dta", nogenerate keep(match)
 
+generate pop = substr(widcode, 6, 4)
+merge n:1 iso year pop using "data-temp/populations.dta", nogenerate keep(master match)
+drop pop
+
 rename a average
 rename t threshold
 rename s top_share
+rename n population
 
 generate double top_average = average*top_share/(1 - p/1e5)
 generate double b           = top_average/threshold
@@ -118,10 +139,22 @@ generate double dphi        = threshold/top_average
 save "data-temp/combined.dta", replace
 
 // -------------------------------------------------------------------------- //
-// Final cleaning up
+// For France, replace data in WID by the data from France DINA
+// (with comes from individual data)
 // -------------------------------------------------------------------------- //
 
 use "data-temp/combined.dta", clear
+
+drop if (iso == "FR") & inlist(widcode, "fiinc992j", "ptinc992j")
+append using "data-temp/dina-fr.dta"
+
+save "data-temp/combined-with-fr.dta", replace
+
+// -------------------------------------------------------------------------- //
+// Final cleaning up
+// -------------------------------------------------------------------------- //
+
+use "data-temp/combined-with-fr.dta", clear
 
 // Generate full country names
 kountry iso, from(iso2c)
@@ -148,7 +181,7 @@ replace pop_name = "equal-split individuals" if (pop_code == "j")
 replace pop_name = "tax units"               if (pop_code == "t")
 
 order iso country widcode var_code var_name pop_code pop_name year p ///
-	average top_share top_average threshold b phi dphi
+	average top_share top_average threshold b phi dphi population
 
 sort iso country widcode var_code var_name pop_code pop_name year p
 
@@ -157,4 +190,3 @@ sort iso country widcode var_code var_name pop_code pop_name year p
 // -------------------------------------------------------------------------- //
 
 export delimited "data-clean/data-wid.csv", replace
-
