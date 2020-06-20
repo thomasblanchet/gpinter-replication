@@ -42,6 +42,8 @@ comparisons <- ddply(data_micro, .(iso, country, widcode, var_code, var_name, ye
     m2 <- method2(p_out, short_tab$p, short_tab$threshold, average)
     m3 <- method3(p_out, short_tab$p, short_tab$threshold, short_tab$m, average)
     m4 <- method4(p_out, short_tab$p, short_tab$threshold, short_tab$m, average)
+    m5 <- method5(p_out, short_tab$p, short_tab$m, average)
+    m6 <- method6(p_out, short_tab$p, short_tab$m, average)
 
     # Generalized Pareto interpolation
     dist <- tabulation_fit(short_tab$p, short_tab$threshold, average, topshare=short_tab$top_share)
@@ -59,13 +61,17 @@ comparisons <- ddply(data_micro, .(iso, country, widcode, var_code, var_name, ye
         threshold_m2 = m2$threshold/average,
         threshold_m3 = m3$threshold/average,
         threshold_m4 = m4$threshold/average,
+        threshold_m5 = m5$threshold/average,
+        threshold_m6 = m6$threshold/average,
 
         top_share_actual = sapply(p_out, function(p) data[data$p == round(p*1e5), "top_share"]),
         top_share_m0 = m0$top_share,
         top_share_m1 = m1$top_share,
         top_share_m2 = m2$top_share,
         top_share_m3 = m3$top_share,
-        top_share_m4 = m4$top_share
+        top_share_m4 = m4$top_share,
+        top_share_m5 = m5$top_share,
+        top_share_m6 = m6$top_share
     ))
 })
 
@@ -275,12 +281,16 @@ interpolation_re <- data.frame(
     threshold_m2 = relerr(comparisons$threshold_actual, comparisons$threshold_m2),
     threshold_m3 = relerr(comparisons$threshold_actual, comparisons$threshold_m3),
     threshold_m4 = relerr(comparisons$threshold_actual, comparisons$threshold_m4),
+    threshold_m5 = relerr(comparisons$threshold_actual, comparisons$threshold_m5),
+    threshold_m6 = relerr(comparisons$threshold_actual, comparisons$threshold_m6),
 
     top_share_m0 = relerr(comparisons$top_share_actual, comparisons$top_share_m0),
     top_share_m1 = relerr(comparisons$top_share_actual, comparisons$top_share_m1),
     top_share_m2 = relerr(comparisons$top_share_actual, comparisons$top_share_m2),
     top_share_m3 = relerr(comparisons$top_share_actual, comparisons$top_share_m3),
-    top_share_m4 = relerr(comparisons$top_share_actual, comparisons$top_share_m4)
+    top_share_m4 = relerr(comparisons$top_share_actual, comparisons$top_share_m4),
+    top_share_m5 = relerr(comparisons$top_share_actual, comparisons$top_share_m5),
+    top_share_m6 = relerr(comparisons$top_share_actual, comparisons$top_share_m6)
 )
 
 # Calculate the mean of the error
@@ -291,12 +301,16 @@ interpolation_mre <- ddply(interpolation_re, .(country, iso, var_code, var_name,
         threshold_m2 = mean(data$threshold_m2),
         threshold_m3 = mean(data$threshold_m3),
         threshold_m4 = mean(data$threshold_m4),
+        threshold_m5 = mean(data$threshold_m5),
+        threshold_m6 = mean(data$threshold_m6),
 
         top_share_m0 = mean(data$top_share_m0),
         top_share_m1 = mean(data$top_share_m1),
         top_share_m2 = mean(data$top_share_m2),
         top_share_m3 = mean(data$top_share_m3),
-        top_share_m4 = mean(data$top_share_m4)
+        top_share_m4 = mean(data$top_share_m4),
+        top_share_m5 = mean(data$top_share_m5),
+        top_share_m6 = mean(data$top_share_m6)
     ))
 })
 
@@ -306,8 +320,12 @@ d_ply(interpolation_mre, "var_code", function(data) {
     filename <- paste0("output/tables/compare-interpolation/compare-", data$var_code[1], ".tex")
 
     # Remove the M4 method from the comparison (comment to keep)
-    data$threshold_m4 <- NULL
-    data$top_share_m4 <- NULL
+    # data$threshold_m4 <- NULL
+    # data$top_share_m4 <- NULL
+    # data$threshold_m5 <- NULL
+    # data$top_share_m5 <- NULL
+    # data$threshold_m6 <- NULL
+    # data$top_share_m6 <- NULL
     # Number of methods left to compare
     n <- (ncol(data) - 5)/2
     # Column for thresholds
@@ -317,7 +335,7 @@ d_ply(interpolation_mre, "var_code", function(data) {
     sink(filename)
 
     cat(paste0(c("\\begin{tabular}{cc", rep("P@{}", n), "} \\toprule\n"), collapse=""))
-    cat(paste0("& & \\multicolumn{", n, "}{>{\\centering\\arraybackslash}p{", 2*n, "cm}}"))
+    cat(paste0("& & \\multicolumn{", n, "}{>{\\centering\\arraybackslash}p{", 1.5*n, "cm}}"))
     cat("{mean percentage gap between estimated and observed values}")
     cat(paste0("\\\\ \\cmidrule(l){3-", 3 + n - 1, "}\n"))
     cat("& & ")

@@ -14,6 +14,8 @@ library(gpinter)
 
 # Other required packages
 library(plyr)
+library(tidyverse)
+library(magrittr)
 library(ggplot2)
 library(scales)
 library(reshape2)
@@ -24,6 +26,7 @@ library(rationalfun)
 library(utils)
 library(numDeriv)
 library(rootSolve)
+library(parallel)
 
 # This is required to get the same font as the rest of the LaTeX document in graphs
 library(fontcm)
@@ -32,14 +35,14 @@ loadfonts()
 
 # Graphical parameters for the graphs
 # For the article
-plot_font       <- "CM Roman"
-plot_bg         <- "#FFFFFF"
-plot_text_color <- "#000000"
+#plot_font       <- "CM Roman"
+#plot_bg         <- "#FFFFFF"
+#plot_text_color <- "#000000"
 
 # For the presentation
-#plot_font       <- "CM Sans"
-#plot_bg         <- "#FBFBFB"
-#plot_text_color <- "#23373B"
+plot_font       <- "CMU Sans Serif"
+plot_bg         <- "#FBFBFB"
+plot_text_color <- "#23373B"
 
 # Function to extract legends in ggplot
 g_legend <- function(gplot) {

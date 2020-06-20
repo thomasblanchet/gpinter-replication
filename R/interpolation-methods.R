@@ -134,3 +134,82 @@ method4 <- function(p, pk, qk, mk, average) {
 
     return(list(threshold=q, top_share=m/average))
 }
+
+# ---------------------------------------------------------------------------- #
+# Method 5: general quadratic Lorenz curve (Villasenor & Arnold, 1989)
+# ---------------------------------------------------------------------------- #
+
+method5 <- function(p, pk, mk, average) {
+    # Calculate Lorenz curve values
+    lk <- 1 - mk/average
+
+    # Define the variables from Villasenor & Arnold
+    tk <- lk*(1 - lk)
+    uk <- pk^2 - lk
+    vk <- lk*(pk - 1)
+    wk <- pk - lk
+
+    # Fit the model (constrained version)
+    fit <- lm(tk - wk ~ 0 + vk)
+
+    # Extract parameters
+    a <- 0 #coef(fit)[1]
+    b <- coef(fit)[1]
+    d <- 1 #coef(fit)[3]
+
+    e     <- -(a + b + d + 1)
+    alpha <- b^2 - 4*a
+    beta  <- 2*b*e - 4*d
+
+    # Estimate Lorenz curve and quantile function
+    l <- suppressWarnings(0.5*(-(b*p + e) - sqrt(alpha*p^2 + beta*p + e^2)))
+    q <- suppressWarnings(0.5*(-b - (beta + 2*alpha*p)/(2*sqrt((-1 - a - b - d)^2 + beta*p + alpha*p^2))))
+
+    l[p == 0] <- 0
+    l[p == 1] <- 1
+    q[p == 0] <- 0
+    q[p == 1] <- +Inf
+
+    return(list(threshold = q*average, top_share = 1 - l))
+}
+
+# ---------------------------------------------------------------------------- #
+# Method 6: Beta method Kakwani and Podder (1976)
+# ---------------------------------------------------------------------------- #
+
+method6 <- function(p, pk, mk, average) {
+    lk <- 1 - mk/average
+
+    rk <- (pk + lk)/sqrt(2)
+    yk <- (pk - lk)/sqrt(2)
+
+    fit <- lm(log(yk) ~ log(rk) + log(sqrt(2) - rk))
+
+    a <- exp(coef(fit)[1])
+    alpha <- coef(fit)[2]
+    beta <- coef(fit)[3]
+
+    f <- function(pi) {
+        eta <- a*pi^alpha*(sqrt(2) - pi)^beta
+
+        eta[pi <= .Machine$double.eps] <- 0
+        eta[pi >= sqrt(2) - .Machine$double.eps] <- 0
+        return(eta)
+    }
+
+    get_l <- function(p) {
+        # Value of Lorenz curve
+        sol <- uniroot(
+            f = function(l) (p - l)/sqrt(2) - f((p + l)/sqrt(2)),
+            lower = 0,
+            upper = 1,
+            extendInt = "yes"
+        )
+        return(sol$root)
+    }
+
+    l <- sapply(p, get_l)
+    q <- sapply(p, function(p) numDeriv::grad(get_l, p))
+
+    return(list(threshold = q*average, top_share = 1 - l))
+}
